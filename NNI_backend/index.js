@@ -11,7 +11,34 @@ const { v4: uuidv4 } = require("uuid");
 
 // Load environment variables
 dotenv.config();
+// === AUTO-DECODE GOOGLE CLOUD SERVICE ACCOUNT KEY FROM BASE64 ===
+const keyPath = path.join(__dirname, "config", "google-cloud-key.json");
 
+if (!fs.existsSync(keyPath)) {
+  const base64Key = process.env.GCP_SERVICE_ACCOUNT_BASE64;
+  if (!base64Key) {
+    console.error(
+      "FATAL: GCP_SERVICE_ACCOUNT_BASE64 environment variable is missing!"
+    );
+    process.exit(1);
+  }
+
+  try {
+    const buffer = Buffer.from(base64Key, "base64");
+    fs.mkdirSync(path.dirname(keyPath), { recursive: true });
+    fs.writeFileSync(keyPath, buffer);
+    logger.info(
+      "Google Cloud service account key decoded and saved to: " + keyPath
+    );
+  } catch (err) {
+    console.error(
+      "FATAL: Failed to decode GCP_SERVICE_ACCOUNT_BASE64:",
+      err.message
+    );
+    process.exit(1);
+  }
+}
+// === END DECODE ===
 // Validate required environment
 const requiredEnv = [
   "NODE_ENV",
