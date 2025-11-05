@@ -27,7 +27,7 @@ if (!fs.existsSync(keyPath)) {
     const buffer = Buffer.from(base64Key, "base64");
     fs.mkdirSync(path.dirname(keyPath), { recursive: true });
     fs.writeFileSync(keyPath, buffer);
-    logger.info(
+    console.log(
       "Google Cloud service account key decoded and saved to: " + keyPath
     );
   } catch (err) {
