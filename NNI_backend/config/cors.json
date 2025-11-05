@@ -1,0 +1,14 @@
+[
+  {
+    "origin": ["http://localhost:5173", "http://localhost:5000"],
+    "method": ["GET", "POST", "PUT", "DELETE", "HEAD", "OPTIONS"],
+    "responseHeader": [
+      "Content-Type",
+      "Authorization",
+      "Content-Length",
+      "User-Agent",
+      "x-goog-*"
+    ],
+    "maxAgeSeconds": 3600
+  }
+]

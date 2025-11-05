@@ -1,0 +1,7 @@
+-- Migration: add lockout fields to users
+BEGIN;
+
+ALTER TABLE IF EXISTS "users" ADD COLUMN IF NOT EXISTS "failedLoginAttempts" INTEGER NOT NULL DEFAULT 0;
+ALTER TABLE IF EXISTS "users" ADD COLUMN IF NOT EXISTS "lockedUntil" TIMESTAMP(3) NULL;
+
+COMMIT;

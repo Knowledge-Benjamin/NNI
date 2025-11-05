@@ -1,0 +1,45 @@
+.editor-container {
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.menu {
+  background: #f9fafb;
+  padding: 0.5rem;
+  border-bottom: 1px solid #d1d5db;
+  display: flex;
+  gap: 0.5rem;
+}
+
+.menu button {
+  padding: 0.5rem 1rem;
+  background: white;
+  border: 1px solid #d1d5db;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.9rem;
+}
+
+.menu button.is-active {
+  background: #2563eb;
+  color: white;
+}
+
+.editor {
+  min-height: 300px;
+  padding: 1rem;
+  background: white;
+}
+
+.editor :global(.ProseMirror) {
+  outline: none;
+}
+
+.editor :global(p.is-editor-empty:first-child::before) {
+  content: "Start writing...";
+  color: #9ca3af;
+  float: left;
+  height: 0;
+  pointer-events: none;
+}
