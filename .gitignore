@@ -30,3 +30,4 @@ Thumbs.db
 
 # Misc
 *.local
+NNI_backend/config/google-cloud-key.json
