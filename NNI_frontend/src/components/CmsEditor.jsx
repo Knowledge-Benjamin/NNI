@@ -111,33 +111,23 @@ export default function CmsEditor({ value = "", onChange, onImageUpload }) {
     if (!f) return;
     setUploading(true);
     try {
-      const data = await uploadImageToImgBB(f);
-      // ImgBB returns a data object with `url` / `display_url` etc.
+      // USE PROXY — NO KEY EXPOSED
+      const data = await uploadImageToImgBB(f, null); // ← THIS LINE FIXED
+
       const url = data?.url || data?.display_url || null;
       if (url) {
-        // notify parent that an image was uploaded (useful for featuredImage)
-        try {
-          if (onImageUpload) onImageUpload(url);
-        } catch (e) {
-          // ignore
-        }
-        // insert at caret
+        if (onImageUpload) onImageUpload(url);
         document.execCommand("insertImage", false, url);
-        // update content
         updateContent();
       }
     } catch (err) {
       console.error("Image upload failed", err);
-      alert((err && err.message) || "Image upload failed");
+      alert(err.message || "Image upload failed");
     } finally {
       setUploading(false);
-      // clear file input so same file can be chosen again
-      try {
-        e.target.value = null;
-      } catch (e) {}
+      e.target.value = null;
     }
   }
-
   return (
     <div className="cms-editor-root">
       <CmsToolbar onCommand={exec} />
