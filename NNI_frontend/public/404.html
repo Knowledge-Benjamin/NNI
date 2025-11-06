@@ -1,10 +1,16 @@
 <!DOCTYPE html>
 <html lang="en">
   <head>
-    <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Nexa News Insight</title>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>NNI News</title>
+    <base href="/" />
+    <script>
+      // Fix base path for www. subdomain
+      if (window.location.hostname === 'www.nni.news' && !document.baseURI.includes('www')) {
+        window.location.replace('https://nni.news' + window.location.pathname + window.location.search);
+      }
+    </script>
   </head>
   <body>
     <div id="root"></div>
