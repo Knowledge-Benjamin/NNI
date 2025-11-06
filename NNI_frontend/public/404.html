@@ -1,18 +1,19 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>NNI News</title>
-</head>
-<body>
-  <div id="root"></div>
-  <script type="module">
-    // ONE-TIME RELOAD ONLY — fixes Render white screen forever
-    if (window.location.pathname !== '/' && !window.__vite_plugin_react_preamble_installed__) {
-      window.location.replace(window.location.href);
-    }
-  </script>
-  <script type="module" src="/src/main.jsx"></script>
-</body>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>NNI News</title>
+    <script type="module">
+      // Render 2025 white-screen fix — one-time only
+      if (!sessionStorage.getItem('render-spa-fix')) {
+        sessionStorage.setItem('render-spa-fix', '1');
+        window.location.reload();
+      }
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.jsx"></script>
+  </body>
 </html>
