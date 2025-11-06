@@ -63,6 +63,8 @@ const logger = pino({
   transport: NODE_ENV === "development" ? { target: "pino-pretty" } : undefined,
 });
 
+// (dev) service env presence logging removed to avoid printing environment details
+
 // Initialize Express app
 const app = express();
 
@@ -133,6 +135,9 @@ app.use("/api/articles", require("./src/routes/articles"));
 
 // Upload proxy (ImgBB) - server-side upload to hide API key from clients
 app.use("/api/uploads", require("./src/routes/uploads"));
+
+// Newsletter proxy (server-side Beehiiv forwarding)
+app.use("/api/newsletter", require("./src/routes/newsletter"));
 
 // Protect /api/users with JWT + ADMIN role
 const { verifyToken, requireRole } = require("./src/middleware/auth");

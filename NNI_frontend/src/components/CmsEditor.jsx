@@ -151,27 +151,27 @@ export default function CmsEditor({ value = "", onChange, onImageUpload }) {
           onFocus={() => setIsFocused(true)}
           onBlur={() => setIsFocused(false)}
           style={{
-            minHeight: "300px",
+            minHeight: "18.75rem", /* 300px */
             padding: "1rem",
             border: "1px solid var(--muted)",
-            borderRadius: 6,
+            borderRadius: "0.375rem",
             background: "var(--bg)",
           }}
         />
 
         <div
           style={{
-            marginTop: 8,
+            marginTop: "0.5rem",
             display: "flex",
             justifyContent: "space-between",
           }}
         >
-          <div className="muted" style={{ fontSize: 12 }}>
+          <div className="muted" style={{ fontSize: "0.75rem" }}>
             {selection
               ? `Selection: ${selection.length} chars`
               : "No selection"}
           </div>
-          <div className="muted" style={{ fontSize: 12 }}>
+          <div className="muted" style={{ fontSize: "0.75rem" }}>
             {content
               ? `${
                   content

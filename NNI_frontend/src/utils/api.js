@@ -65,6 +65,14 @@ export async function createArticle(
     fd.append("excerpt", excerpt);
     fd.append("status", status);
     fd.append("featuredImage", featuredImage);
+    // include optional category and tags when present on the payload
+    if (typeof arguments[0].category !== "undefined") {
+      fd.append("category", arguments[0].category);
+    }
+    if (typeof arguments[0].tags !== "undefined") {
+      const t = arguments[0].tags;
+      fd.append("tags", Array.isArray(t) ? JSON.stringify(t) : String(t));
+    }
     return await request(`/api/articles`, {
       method: "POST",
       body: fd,
@@ -81,6 +89,8 @@ export async function createArticle(
       excerpt,
       status,
       featuredImage: featuredImage || null,
+      category: arguments[0].category,
+      tags: arguments[0].tags,
     },
     token,
   });
@@ -98,6 +108,13 @@ export async function updateArticle(
     fd.append("excerpt", excerpt);
     fd.append("status", status);
     fd.append("featuredImage", featuredImage);
+    if (typeof arguments[1].category !== "undefined") {
+      fd.append("category", arguments[1].category);
+    }
+    if (typeof arguments[1].tags !== "undefined") {
+      const t = arguments[1].tags;
+      fd.append("tags", Array.isArray(t) ? JSON.stringify(t) : String(t));
+    }
     return await request(`/api/articles/${encodeURIComponent(id)}`, {
       method: "PUT",
       body: fd,
@@ -114,6 +131,8 @@ export async function updateArticle(
       excerpt,
       status,
       featuredImage: featuredImage || null,
+      category: arguments[1].category,
+      tags: arguments[1].tags,
     },
     token,
   });

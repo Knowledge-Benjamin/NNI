@@ -1,10 +1,12 @@
-import React from "react";
+import React, { useState } from "react";
 import { Link, NavLink, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 
 export default function NavBar({ theme, toggleTheme }) {
   const navigate = useNavigate();
   const auth = useAuth();
+  const [mobileOpen, setMobileOpen] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
 
   const handleLogout = () => {
     try {
@@ -13,19 +15,37 @@ export default function NavBar({ theme, toggleTheme }) {
     navigate("/");
   };
 
+  function handleNavClick() {
+    // close mobile menu when a nav link is used
+    if (mobileOpen) setMobileOpen(false);
+  }
+
   return (
     <header>
       <div className="header-content">
         <div className="header-left">
-          <Link to="/" className="logo">
+          <Link to="/" className="logo" onClick={handleNavClick}>
             LET'SPREAD
           </Link>
-          <div className="search-box">
+          <form
+            className="search-box"
+            onSubmit={(e) => {
+              e.preventDefault();
+              const q = (searchTerm || "").trim();
+              // navigate to home with search param; ArticlesView will handle it
+              navigate(q ? `/?q=${encodeURIComponent(q)}` : "/");
+              // collapse mobile menu if open
+              if (mobileOpen) setMobileOpen(false);
+            }}
+          >
             <input
               type="text"
-              placeholder="Sign Up for Our Paris Olympics Newsletter"
+              placeholder="Search articles"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              aria-label="Search articles"
             />
-            <button>
+            <button type="submit" aria-label="Search">
               <svg
                 width="16"
                 height="16"
@@ -42,9 +62,22 @@ export default function NavBar({ theme, toggleTheme }) {
                 />
               </svg>
             </button>
-          </div>
+          </form>
         </div>
-        <nav>
+
+        {/* Hamburger for small screens */}
+        <button
+          className={`hamburger ${mobileOpen ? "open" : ""}`}
+          aria-label="Toggle navigation"
+          aria-expanded={mobileOpen}
+          onClick={() => setMobileOpen((s) => !s)}
+        >
+          <span />
+          <span />
+          <span />
+        </button>
+
+        <nav className={mobileOpen ? "mobile-open" : ""}>
           <button
             onClick={toggleTheme}
             className="theme-toggle"
@@ -93,40 +126,55 @@ export default function NavBar({ theme, toggleTheme }) {
           <NavLink
             to="/"
             className={({ isActive }) => (isActive ? "active" : "")}
+            onClick={handleNavClick}
           >
             Home
           </NavLink>
           <NavLink
             to="/join"
             className={({ isActive }) => (isActive ? "active" : "")}
+            onClick={handleNavClick}
           >
             Join Us
           </NavLink>
           <NavLink
             to="/customer-care"
             className={({ isActive }) => (isActive ? "active" : "")}
+            onClick={handleNavClick}
           >
             Customer Care
           </NavLink>
           <NavLink
             to="/reach-out"
             className={({ isActive }) => (isActive ? "active" : "")}
+            onClick={handleNavClick}
           >
             Reach Out
           </NavLink>
           <NavLink
             to="/about"
             className={({ isActive }) => (isActive ? "active" : "")}
+            onClick={handleNavClick}
           >
             About Us
           </NavLink>
-          <button className="subscribe-button">Subscribe</button>
+          <button
+            className="subscribe-button"
+            onClick={() => {
+              // open newsletter modal globally
+              window.dispatchEvent(new Event("open-newsletter"));
+              handleNavClick();
+            }}
+          >
+            Subscribe
+          </button>
           {auth?.user?.role === "ADMIN" && (
             <NavLink
               to="/cms"
               className={({ isActive }) =>
                 `subscribe-button cms-button ${isActive ? "active" : ""}`
               }
+              onClick={handleNavClick}
             >
               CMS
             </NavLink>
@@ -139,7 +187,10 @@ export default function NavBar({ theme, toggleTheme }) {
               </span>
               <button
                 className="subscribe-button login-button"
-                onClick={handleLogout}
+                onClick={() => {
+                  handleLogout();
+                  handleNavClick();
+                }}
                 aria-label="Logout"
               >
                 Logout
@@ -152,6 +203,7 @@ export default function NavBar({ theme, toggleTheme }) {
                 `subscribe-button login-button ${isActive ? "active" : ""}`
               }
               aria-label="Login"
+              onClick={handleNavClick}
             >
               Login
             </NavLink>

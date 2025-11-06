@@ -10,7 +10,23 @@ async function fetchArticles({ status = "PUBLISHED" } = {}) {
     const text = await res.text();
     throw new Error(`Failed to fetch articles: ${res.status} ${text}`);
   }
-  return res.json();
+  const json = await res.json();
+  // Normalize articles to ensure category and tags are present
+  if (json && Array.isArray(json.data)) {
+    json.data = json.data.map((a) => ({
+      ...a,
+      category: a.category || "News",
+      tags: Array.isArray(a.tags)
+        ? a.tags
+        : a.tags
+        ? String(a.tags)
+            .split(",")
+            .map((t) => t.trim())
+            .filter(Boolean)
+        : [],
+    }));
+  }
+  return json;
 }
 
 async function createArticle({
@@ -19,6 +35,8 @@ async function createArticle({
   excerpt,
   status = "DRAFT",
   featuredImageFile,
+  category,
+  tags,
   token,
 } = {}) {
   const url = `${API_BASE}/api/articles`;
@@ -27,6 +45,8 @@ async function createArticle({
   form.append("content", content || "");
   form.append("excerpt", excerpt || "");
   form.append("status", status);
+  if (category) form.append("category", category);
+  if (Array.isArray(tags)) form.append("tags", JSON.stringify(tags));
   if (featuredImageFile) form.append("featuredImage", featuredImageFile);
 
   const headers = {};
@@ -45,4 +65,40 @@ async function createArticle({
   return res.json();
 }
 
-export { fetchArticles, createArticle };
+async function fetchSearch({ q = "", status = "PUBLISHED", limit = 20 } = {}) {
+  const url = new URL(
+    `${API_BASE}/api/articles/search`,
+    window.location.origin
+  );
+  if (q) url.searchParams.set("q", q);
+  if (status) url.searchParams.set("status", status);
+  if (limit) url.searchParams.set("limit", String(limit));
+
+  const res = await fetch(url.toString(), {
+    credentials: "include",
+    cache: "no-store",
+  });
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(`Search failed: ${res.status} ${text}`);
+  }
+  const json = await res.json();
+  // Normalize articles to ensure category and tags are present
+  if (json && Array.isArray(json.data)) {
+    json.data = json.data.map((a) => ({
+      ...a,
+      category: a.category || "News",
+      tags: Array.isArray(a.tags)
+        ? a.tags
+        : a.tags
+        ? String(a.tags)
+            .split(",")
+            .map((t) => t.trim())
+            .filter(Boolean)
+        : [],
+    }));
+  }
+  return json;
+}
+
+export { fetchArticles, createArticle, fetchSearch };

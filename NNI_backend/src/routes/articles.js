@@ -260,6 +260,109 @@ async function ensureUniqueSlug(base) {
 }
 
 // Get all articles (public)
+// Search articles (public)
+router.get("/search", async (req, res) => {
+  try {
+    const { q = "", status = "PUBLISHED", limit = 20 } = req.query;
+    const max = Math.min(parseInt(limit, 10) || 20, 200);
+
+    if (!prisma) {
+      // fallback to searching the DEV_SAMPLE_ARTICLES array
+      const term = String(q || "")
+        .toLowerCase()
+        .trim();
+      const matches = DEV_SAMPLE_ARTICLES.filter((a) => {
+        if (status && a.status !== status) return false;
+        if (!term) return true;
+        const hay = [a.title, a.excerpt, a.content, a.category]
+          .filter(Boolean)
+          .join(" ")
+          .toLowerCase();
+        const tags = (a.tags || []).join(" ").toLowerCase();
+        return hay.includes(term) || tags.includes(term);
+      }).slice(0, max);
+      return res.json({ data: matches, count: matches.length, status, q });
+    }
+
+    const trimmed = String(q || "").trim();
+    // If no query provided, return recent articles by status
+    if (!trimmed) {
+      const articles = await prisma.article.findMany({
+        where: { status },
+        orderBy: { createdAt: "desc" },
+        take: max,
+      });
+      return res.json({ data: articles, count: articles.length, status });
+    }
+
+    // Basic multi-field contains search (case-insensitive)
+    const where = {
+      status,
+      OR: [
+        { title: { contains: trimmed, mode: "insensitive" } },
+        { content: { contains: trimmed, mode: "insensitive" } },
+        { excerpt: { contains: trimmed, mode: "insensitive" } },
+        { category: { contains: trimmed, mode: "insensitive" } },
+        // tags: try exact tag match in array
+        { tags: { has: trimmed } },
+      ],
+    };
+
+    // Try to run the query. If the Prisma schema doesn't include `tags`
+    // (e.g. migration not applied) the query will fail with an 'Unknown
+    // argument `tags`' error. In that case, retry without the tags
+    // condition so search still works against title/content/excerpt/category.
+    let articles;
+    try {
+      articles = await prisma.article.findMany({
+        where,
+        include: {
+          author: { select: { id: true, name: true, email: true } },
+        },
+        orderBy: { createdAt: "desc" },
+        take: max,
+      });
+    } catch (innerErr) {
+      const msg = String(innerErr && (innerErr.message || innerErr));
+      // If the error is about an unknown 'tags' argument, remove that clause and retry
+      if (
+        /unknown\s+argument\s+`?tags`?/i.test(msg) ||
+        /Unknown argument `tags`/i.test(msg)
+      ) {
+        console.warn(
+          "Prisma schema appears to be missing 'tags' field - retrying search without tags condition"
+        );
+        // clone where but filter out the tags condition from OR
+        const safeWhere = Object.assign({}, where, {
+          OR: (where.OR || []).filter((c) => {
+            // detect the tags condition by checking for a 'tags' key
+            return !(c && Object.prototype.hasOwnProperty.call(c, "tags"));
+          }),
+        });
+
+        articles = await prisma.article.findMany({
+          where: safeWhere,
+          include: {
+            author: { select: { id: true, name: true, email: true } },
+          },
+          orderBy: { createdAt: "desc" },
+          take: max,
+        });
+      } else {
+        // rethrow other errors to be handled by outer catch
+        throw innerErr;
+      }
+    }
+
+    res.json({ data: articles, count: articles.length, status, q: trimmed });
+  } catch (error) {
+    console.error("Error searching articles:", error);
+    res
+      .status(500)
+      .json({ error: "Failed to search articles", message: error.message });
+  }
+});
+
 router.get("/", async (req, res) => {
   try {
     console.log("GET /articles - Query:", req.query);
@@ -339,7 +442,40 @@ router.post(
       if (!prisma)
         return res.status(503).json({ error: "Database not configured" });
 
-      const { title, content, excerpt, status = "DRAFT" } = req.body;
+      const {
+        title,
+        content,
+        excerpt,
+        status = "DRAFT",
+        category,
+        tags,
+      } = req.body;
+
+      // Normalize tags: accept JSON string, comma-separated string, or array
+      let tagsArr = undefined;
+      if (typeof tags !== "undefined" && tags !== null) {
+        if (Array.isArray(tags)) {
+          tagsArr = tags.map((t) => String(t).trim()).filter(Boolean);
+        } else if (typeof tags === "string") {
+          try {
+            const parsed = JSON.parse(tags);
+            if (Array.isArray(parsed)) {
+              tagsArr = parsed.map((t) => String(t).trim()).filter(Boolean);
+            } else {
+              // fallback: comma-separated
+              tagsArr = tags
+                .split(",")
+                .map((t) => t.trim())
+                .filter(Boolean);
+            }
+          } catch (e) {
+            tagsArr = tags
+              .split(",")
+              .map((t) => t.trim())
+              .filter(Boolean);
+          }
+        }
+      }
 
       // Enforce server-side 5000-word limit for article content
       const wc = countWordsFromHtml(content);
@@ -409,6 +545,8 @@ router.post(
         content,
         excerpt,
         status,
+        category: category || undefined,
+        tags: typeof tagsArr !== "undefined" ? tagsArr : undefined,
         featuredImage: featuredImageUrl,
         author: {
           connect: {
@@ -517,7 +655,32 @@ router.put(
       if (!prisma)
         return res.status(503).json({ error: "Database not configured" });
 
-      const { title, content, excerpt, status } = req.body;
+      const { title, content, excerpt, status, category, tags } = req.body;
+
+      // Normalize tags on update similar to create
+      let tagsArr = undefined;
+      if (typeof tags !== "undefined" && tags !== null) {
+        if (Array.isArray(tags)) {
+          tagsArr = tags.map((t) => String(t).trim()).filter(Boolean);
+        } else if (typeof tags === "string") {
+          try {
+            const parsed = JSON.parse(tags);
+            if (Array.isArray(parsed)) {
+              tagsArr = parsed.map((t) => String(t).trim()).filter(Boolean);
+            } else {
+              tagsArr = tags
+                .split(",")
+                .map((t) => t.trim())
+                .filter(Boolean);
+            }
+          } catch (e) {
+            tagsArr = tags
+              .split(",")
+              .map((t) => t.trim())
+              .filter(Boolean);
+          }
+        }
+      }
 
       // Enforce server-side 5000-word limit for article content on update as well
       const wc = countWordsFromHtml(content);
@@ -533,6 +696,8 @@ router.put(
         content,
         excerpt,
         status,
+        ...(typeof category !== "undefined" ? { category } : {}),
+        ...(typeof tagsArr !== "undefined" ? { tags: tagsArr } : {}),
         ...(req.file ? { featuredImage: req.file.location } : {}),
         // explicitly set publishedAt when publishing, or clear it when
         // changing back to draft/unpublished so the publishedAt value

@@ -8,6 +8,7 @@ import CMS from "./pages/CMS";
 import NavBar from "./components/NavBar";
 import Footer from "./components/Footer";
 import ProtectedRoute from "./components/ProtectedRoute";
+import NewsletterModal from "./components/NewsletterModal";
 // import Login from "./pages/Login";
 // import Admin from "./pages/Admin";
 // import ProtectedRoute from "./components/ProtectedRoute";
@@ -45,6 +46,7 @@ export default function App() {
         toggleTheme={toggleTheme}
         showLogout={location.pathname === "/login"}
       />
+      <NewsletterModal />
       <main style={{ marginTop: "1rem" }}>
         <Routes>
           <Route path="/" element={<Home />} />

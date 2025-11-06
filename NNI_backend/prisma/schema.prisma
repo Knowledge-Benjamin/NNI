@@ -37,6 +37,7 @@ model Article {
   featuredImage String?
   status        String   @default("DRAFT")
   category      String   @default("Olympics")
+  tags          String[] @default([])
   isVideo       Boolean  @default(false)
   videoDuration String?
   readTime      Int      @default(3)

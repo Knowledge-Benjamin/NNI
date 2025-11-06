@@ -4,6 +4,7 @@ import CmsEditor from "../components/CmsEditor";
 import CmsList from "../components/CmsList";
 import * as api from "../utils/api";
 import Toasts from "../components/Toasts";
+import TagInput from "../components/TagInput";
 
 export default function CMS() {
   const { token } = useAuth();
@@ -44,6 +45,8 @@ export default function CMS() {
             excerpt: selected.excerpt,
             content: selected.content,
             status: selected.status,
+            category: selected.category,
+            tags: selected.tags,
           })
         );
       } catch (e) {
@@ -86,6 +89,8 @@ export default function CMS() {
       content: "",
       excerpt: "",
       status: "DRAFT",
+      category: "Olympics",
+      tags: [],
     };
     setArticles([newArticle, ...articles]);
     setSelected(newArticle);
@@ -327,7 +332,9 @@ export default function CMS() {
                 {wordCount > 5000 ? "(exceeds limit)" : ""}
               </small>
               {wordCount > 5000 && (
-                <small style={{ color: "var(--danger)", marginLeft: 12 }}>
+                <small
+                  style={{ color: "var(--danger)", marginLeft: "0.75rem" }}
+                >
                   Please shorten your article to 5000 words or less.
                 </small>
               )}
@@ -337,8 +344,8 @@ export default function CMS() {
             <div
               style={{
                 display: "flex",
-                gap: 12,
-                marginTop: 12,
+                gap: "0.75rem",
+                marginTop: "0.75rem",
                 alignItems: "flex-start",
               }}
             >
@@ -354,7 +361,7 @@ export default function CMS() {
                   />
                 </label>
 
-                <label className="field" style={{ marginTop: 8 }}>
+                <label className="field" style={{ marginTop: "0.5rem" }}>
                   <span className="label">Excerpt</span>
                   <input
                     className="input"
@@ -369,19 +376,46 @@ export default function CMS() {
 
               <div
                 style={{
-                  minWidth: 200,
+                  minWidth: "12.5rem",
                   display: "flex",
                   flexDirection: "column",
-                  gap: 8,
+                  gap: "0.5rem",
                 }}
               >
+                <label style={{ display: "flex", flexDirection: "column" }}>
+                  <span className="label">Category</span>
+                  <select
+                    value={selected.category || "Olympics"}
+                    onChange={(e) =>
+                      setSelected((s) => ({ ...s, category: e.target.value }))
+                    }
+                    className="input"
+                    style={{ padding: "0.375rem 0.5rem" }}
+                  >
+                    <option>Olympics</option>
+                    <option>News</option>
+                    <option>Sports</option>
+                    <option>Opinion</option>
+                    <option>Lifestyle</option>
+                    <option>Technology</option>
+                  </select>
+                </label>
+
+                <label style={{ display: "flex", flexDirection: "column" }}>
+                  <span className="label">Tags</span>
+                  <TagInput
+                    value={selected.tags || []}
+                    onChange={(tags) => setSelected((s) => ({ ...s, tags }))}
+                    placeholder="Add a tag"
+                  />
+                </label>
                 <label style={{ display: "flex", flexDirection: "column" }}>
                   <span className="label">Excerpt length</span>
                   <select
                     value={excerptLength}
                     onChange={(e) => setExcerptLength(Number(e.target.value))}
                     className="input"
-                    style={{ padding: "6px 8px" }}
+                    style={{ padding: "0.375rem 0.5rem" }}
                   >
                     <option value={50}>50 chars</option>
                     <option value={100}>100 chars</option>
@@ -403,7 +437,7 @@ export default function CMS() {
               </div>
             </div>
 
-            <div style={{ marginTop: 12 }}>
+            <div style={{ marginTop: "0.75rem" }}>
               <CmsEditor
                 value={selected.content}
                 onChange={(html) => setSelected({ ...selected, content: html })}
@@ -417,14 +451,14 @@ export default function CMS() {
             {/* Featured image preview + replace/remove controls */}
             <div
               style={{
-                marginTop: 12,
+                marginTop: "0.75rem",
                 display: "flex",
-                gap: 12,
+                gap: "0.75rem",
                 alignItems: "center",
               }}
             >
-              <div style={{ minWidth: 120 }}>
-                <div style={{ fontSize: 12 }} className="muted">
+              <div style={{ minWidth: "7.5rem" }}>
+                <div style={{ fontSize: "0.75rem" }} className="muted">
                   Featured image
                 </div>
                 {selected.featuredImage || featuredImageUrl ? (
@@ -432,34 +466,42 @@ export default function CMS() {
                     src={selected.featuredImage || featuredImageUrl}
                     alt="Featured"
                     style={{
-                      width: 120,
-                      height: 80,
+                      width: "7.5rem",
+                      height: "5rem",
                       objectFit: "cover",
-                      borderRadius: 6,
-                      marginTop: 6,
+                      borderRadius: "0.375rem",
+                      marginTop: "0.375rem",
                     }}
                   />
                 ) : (
                   <div
                     style={{
-                      width: 120,
-                      height: 80,
+                      width: "7.5rem",
+                      height: "5rem",
                       border: "1px dashed var(--muted)",
-                      borderRadius: 6,
-                      marginTop: 6,
+                      borderRadius: "0.375rem",
+                      marginTop: "0.375rem",
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "center",
                     }}
                   >
-                    <span style={{ fontSize: 12, color: "var(--muted)" }}>
+                    <span
+                      style={{ fontSize: "0.75rem", color: "var(--muted)" }}
+                    >
                       No image
                     </span>
                   </div>
                 )}
               </div>
 
-              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+              <div
+                style={{
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: "0.5rem",
+                }}
+              >
                 <input
                   type="file"
                   accept="image/*"
@@ -490,7 +532,7 @@ export default function CMS() {
                   }}
                 />
 
-                <div style={{ display: "flex", gap: 8 }}>
+                <div style={{ display: "flex", gap: "0.5rem" }}>
                   <button
                     className="btn"
                     onClick={() =>
@@ -513,7 +555,7 @@ export default function CMS() {
               </div>
             </div>
 
-            <div style={{ marginTop: 8 }}>
+            <div style={{ marginTop: "0.5rem" }}>
               <button
                 className="btn"
                 onClick={() => {

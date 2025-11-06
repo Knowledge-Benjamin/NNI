@@ -1,0 +1,2 @@
+REMOVED: The Beehiiv API key and publication ID were moved to the frontend `.env` file.
+Do NOT commit credentials. Keep secrets in your local `.env` only.

@@ -12,19 +12,19 @@ export default function CmsList({
     <aside
       className="cms-list"
       style={{
-        width: 320,
+        width: "20rem", /* 320px */
         padding: "1rem",
         borderRight: "1px solid var(--muted)",
       }}
     >
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          marginBottom: "0.5rem",
-        }}
-      >
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            marginBottom: "0.5rem",
+          }}
+        >
         <h3>Articles</h3>
         <button className="btn" onClick={onCreate}>
           New
@@ -66,7 +66,7 @@ export default function CmsList({
                     {a.status === "PUBLISHED" ? "Published" : "Draft"}
                   </div>
                 </div>
-                <div className="muted" style={{ fontSize: 12, marginTop: 6 }}>
+                <div className="muted" style={{ fontSize: "0.75rem", marginTop: "0.375rem" }}>
                   {a.publishedAt
                     ? new Date(a.publishedAt).toLocaleString()
                     : "—"}

@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
-import { fetchArticles } from "../api/articles";
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import { fetchArticles, fetchSearch } from "../api/articles";
 
 // Simple hero slider component
 function HeroSlider({ slides = [] }) {
@@ -199,6 +199,30 @@ const ArticleCard = ({ article, featured }) => (
         </Link>
       </h2>
       <p className="article-excerpt">{article.excerpt}</p>
+      {article.tags && article.tags.length > 0 && (
+        <div
+          style={{
+            marginTop: "0.5rem",
+            display: "flex",
+            gap: "0.5rem",
+            flexWrap: "wrap",
+          }}
+        >
+          {article.tags.map((t, i) => (
+            <span
+              key={`${t}-${i}`}
+              style={{
+                fontSize: "0.8rem",
+                padding: "0.15rem 0.5rem",
+                background: "#f3f4f6",
+                borderRadius: "999px",
+              }}
+            >
+              {t}
+            </span>
+          ))}
+        </div>
+      )}
     </div>
     {article.featuredImage && (
       <Link
@@ -261,25 +285,40 @@ export default function ArticlesView() {
   ]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [selectedCategory, setSelectedCategory] = useState("All");
+  const [selectedTag, setSelectedTag] = useState(null);
+  const paramsForRender = new URLSearchParams(window.location.search || "");
+  const currentQuery = paramsForRender.get("q") || "";
+
+  const location = useLocation();
+  const navigate = useNavigate();
 
   useEffect(() => {
     let mounted = true;
+    const params = new URLSearchParams(location.search || "");
+    const q = params.get("q") || "";
+
     const loadArticles = async () => {
       try {
-        const response = await fetchArticles();
+        setLoading(true);
+        let response;
+        if (q) {
+          response = await fetchSearch({ q, status: "PUBLISHED", limit: 50 });
+        } else {
+          response = await fetchArticles();
+        }
         if (!mounted) return;
         setArticles(response.data || []);
+        setError(null);
       } catch (err) {
         if (!mounted) return;
         setError(err.message || String(err));
       } finally {
-        if (mounted) {
-          setLoading(false);
-        }
+        if (mounted) setLoading(false);
       }
     };
 
-    // initial load
+    // initial load & on search param change
     loadArticles();
 
     // listen for external updates (e.g., CMS saved a new article)
@@ -292,18 +331,41 @@ export default function ArticlesView() {
       mounted = false;
       window.removeEventListener("articles-updated", onArticlesUpdated);
     };
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [location.search]);
 
   if (loading) return <p>Loading articles...</p>;
   if (error) return <p className="error">Error: {error}</p>;
   if (articles.length === 0) return <p>No published articles found</p>;
 
+  // Apply category/tag filters
+  const filteredArticles = articles.filter((article) => {
+    if (selectedCategory && selectedCategory !== "All") {
+      if ((article.category || "") !== selectedCategory) return false;
+    }
+    if (selectedTag) {
+      const tags = Array.isArray(article.tags) ? article.tags : [];
+      if (!tags.includes(selectedTag)) return false;
+    }
+    return true;
+  });
+
   // Filter video articles for the sidebar
-  const mainArticles = articles
+  const mainArticles = filteredArticles
     .filter((article) => !article.isVideo)
     .slice(0, 5);
   const videoArticles = articles.filter((article) => article.isVideo);
-  const sidebarArticles = articles.slice(5, 10);
+  const sidebarArticles = filteredArticles.slice(5, 10);
+
+  // compute unique categories and tags for filters
+  const categories = Array.from(
+    new Set(articles.map((a) => a.category || "News"))
+  ).sort();
+  const tags = Array.from(
+    new Set(
+      (articles || []).flatMap((a) => (Array.isArray(a.tags) ? a.tags : []))
+    )
+  ).sort();
 
   if (loading) return <div className="loading">Loading articles...</div>;
   if (error) return <div className="error">Error: {error}</div>;
@@ -311,6 +373,84 @@ export default function ArticlesView() {
   return (
     <div className="articles-container">
       <main className="main-content">
+        <div
+          style={{
+            display: "flex",
+            gap: "0.5rem",
+            alignItems: "center",
+            marginBottom: "1rem",
+          }}
+        >
+          <label style={{ color: "var(--muted)", fontSize: "0.95rem" }}>
+            Category:&nbsp;
+            <select
+              value={selectedCategory}
+              onChange={(e) => {
+                setSelectedCategory(e.target.value);
+                setSelectedTag(null);
+              }}
+            >
+              <option value="All">All</option>
+              {categories.map((c) => (
+                <option key={c} value={c}>
+                  {c}
+                </option>
+              ))}
+            </select>
+          </label>
+          <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
+            {tags.map((t) => (
+              <button
+                key={t}
+                onClick={() => setSelectedTag(selectedTag === t ? null : t)}
+                className={selectedTag === t ? "tag-active" : "tag"}
+                style={{
+                  padding: "0.25rem 0.5rem",
+                  borderRadius: "999px",
+                  border: "1px solid #ddd",
+                  background:
+                    selectedTag === t ? "var(--accent)" : "transparent",
+                  color: selectedTag === t ? "#fff" : "inherit",
+                }}
+              >
+                {t}
+              </button>
+            ))}
+          </div>
+        </div>
+        {/* Search indicator */}
+        {currentQuery ? (
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              gap: "1rem",
+              marginBottom: "1rem",
+              padding: "0.5rem 0.75rem",
+              background: "#f7fafc",
+              borderRadius: "6px",
+            }}
+          >
+            <div>
+              Showing results for <strong>"{currentQuery}"</strong>
+            </div>
+            <div>
+              <button
+                onClick={() => {
+                  // clear search by navigating to base path
+                  window.history.pushState({}, "", "/");
+                  // trigger reload by dispatching popstate
+                  window.dispatchEvent(new PopStateEvent("popstate"));
+                }}
+                className="tag"
+              >
+                Clear
+              </button>
+            </div>
+          </div>
+        ) : null}
+
         {/* Hero slider placed just below nav */}
         <HeroSlider slides={mainArticles.slice(0, 4)} />
 

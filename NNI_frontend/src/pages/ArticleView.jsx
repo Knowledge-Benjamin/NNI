@@ -90,16 +90,44 @@ export default function ArticleView() {
               ? new Date(article.publishedAt).toLocaleDateString()
               : ""}
           </span>
+          <span className="article-category" style={{ marginLeft: "1rem" }}>
+            {article.category || "News"}
+          </span>
         </div>
 
         <h1 className="article-page-title">{article.title}</h1>
+
+        {article.tags && article.tags.length > 0 && (
+          <div
+            style={{
+              marginTop: "0.5rem",
+              display: "flex",
+              gap: "0.5rem",
+              flexWrap: "wrap",
+            }}
+          >
+            {article.tags.map((t, i) => (
+              <span
+                key={`${t}-${i}`}
+                style={{
+                  fontSize: "0.85rem",
+                  padding: "0.2rem 0.5rem",
+                  background: "#f3f4f6",
+                  borderRadius: "999px",
+                }}
+              >
+                {t}
+              </span>
+            ))}
+          </div>
+        )}
 
         <div
           className="article-content"
           dangerouslySetInnerHTML={{ __html: sanitizeHTML(contentHtml) }}
         />
 
-        <div style={{ marginTop: 24 }}>
+        <div style={{ marginTop: "1.5rem" }}>
           <Link to="/" className="btn btn-ghost">
             ← Back to home
           </Link>
