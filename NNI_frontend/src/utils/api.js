@@ -187,7 +187,7 @@ export async function uploadImageToImgBB(file, apiKey) {
     throw err;
   }
 
-  if (!res.ok || json?.status !== 200) {
+  if (!res.ok) {
     const msg =
       json?.error?.message || json?.data?.error || JSON.stringify(json);
     const err = new Error(`ImgBB upload failed: ${msg}`);
@@ -195,7 +195,12 @@ export async function uploadImageToImgBB(file, apiKey) {
     throw err;
   }
 
-  return json.data; // contains display_url, url, image.url, etc.
+  // SUCCESS: backend proxy returns { data: { ... } } or full ImgBB response
+  // ImgBB original has json.success true + json.status 200
+  // Our proxy may skip those — so we ONLY check res.ok
+  return json.data || json; // always return the image data
+
+  // return json.data; // contains display_url, url, image.url, etc.
 }
 
 export default {
