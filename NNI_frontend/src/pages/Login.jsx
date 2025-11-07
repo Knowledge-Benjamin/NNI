@@ -40,7 +40,7 @@ export default function Login() {
         <div className="auth-card" role="region" aria-label="Authentication">
           <div className="auth-header">
             <h1 className="auth-title">Welcome back</h1>
-            <p className="auth-sub">Sign in to continue to LET'SPREAD</p>
+            <p className="auth-sub">Sign in to continue to NNI</p>
           </div>
 
           <div className="auth-toggle">

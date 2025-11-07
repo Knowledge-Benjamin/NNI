@@ -25,7 +25,7 @@ export default function NavBar({ theme, toggleTheme }) {
       <div className="header-content">
         <div className="header-left">
           <Link to="/" className="logo" onClick={handleNavClick}>
-            LET'SPREAD
+            NNI
           </Link>
           <form
             className="search-box"

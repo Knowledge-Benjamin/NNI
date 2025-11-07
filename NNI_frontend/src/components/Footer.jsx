@@ -6,7 +6,7 @@ export default function Footer() {
     <footer className="site-footer">
       <div className="footer-content">
         <div className="footer-col footer-brand">
-          <div className="logo">LET'SPREAD</div>
+          <div className="logo">NNI</div>
           <p className="footer-tag">
             Reliable reporting. Thoughtful perspective.
           </p>
@@ -65,8 +65,8 @@ export default function Footer() {
 
       <div className="footer-bottom">
         <div className="footer-bottom-left">
-          <small>
-            © {new Date().getFullYear()} LET'SPREAD — All rights reserved.
+            <small>
+            © {new Date().getFullYear()} NNI — All rights reserved.
           </small>
         </div>
         <div className="footer-bottom-right">
