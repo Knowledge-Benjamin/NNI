@@ -139,6 +139,9 @@ app.use("/api/uploads", require("./src/routes/uploads"));
 // Newsletter proxy (server-side Beehiiv forwarding)
 app.use("/api/newsletter", require("./src/routes/newsletter"));
 
+// Sitemap (dynamic)
+app.use("/", require("./src/routes/sitemap"));
+
 // Protect /api/users with JWT + ADMIN role
 const { verifyToken, requireRole } = require("./src/middleware/auth");
 app.use("/api/users", verifyToken, requireRole("ADMIN"));
