@@ -170,13 +170,13 @@ export default function NavBar({ theme, toggleTheme }) {
           </button>
           {auth?.user?.role === "ADMIN" && (
             <NavLink
-              to="/cms"
+              to="/dashboard"
               className={({ isActive }) =>
                 `subscribe-button cms-button ${isActive ? "active" : ""}`
               }
               onClick={handleNavClick}
             >
-              CMS
+              Dashboard
             </NavLink>
           )}
 

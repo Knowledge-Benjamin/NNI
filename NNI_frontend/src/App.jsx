@@ -5,6 +5,7 @@ import Home from "./pages/Home";
 import Login from "./pages/Login";
 import ArticleView from "./pages/ArticleView";
 import CMS from "./pages/CMS";
+import Dashboard from "./pages/Dashboard";
 import NavBar from "./components/NavBar";
 import Footer from "./components/Footer";
 import ProtectedRoute from "./components/ProtectedRoute";
@@ -62,6 +63,10 @@ export default function App() {
                 <CMS />
               </ProtectedRoute>
             }
+          />
+          <Route
+            path="/dashboard/*"
+            element={<Dashboard />}
           />
         </Routes>
       </main>

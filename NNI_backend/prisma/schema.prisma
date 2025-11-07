@@ -35,6 +35,12 @@ model Article {
   content       String?  @db.Text
   excerpt       String?
   featuredImage String?
+  featuredImageName String?
+  featuredImageAlt  String?
+  metaTitle     String?
+  metaDescription String? @db.Text
+  metaKeywords  String?
+  canonical     String?
   status        String   @default("DRAFT")
   category      String   @default("Olympics")
   tags          String[] @default([])

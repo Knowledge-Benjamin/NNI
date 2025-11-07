@@ -795,6 +795,108 @@ header nav a:hover {
   }
 }
 
+/* Dashboard / SideNav styles */
+.dashboard-layout {
+  display: flex;
+  gap: 1rem;
+  align-items: stretch;
+  min-height: calc(100vh - 6rem); /* allow header/footer spacing */
+  margin: 1rem auto;
+  max-width: 1200px;
+}
+.sidenav {
+  width: 220px;
+  background: var(--surface);
+  border-radius: 12px;
+  padding: 0.75rem;
+  box-shadow: 0 6px 22px rgba(2, 6, 23, 0.06);
+  display: flex;
+  flex-direction: column;
+  transition: width 180ms ease;
+}
+.sidenav.collapsed {
+  width: 72px;
+}
+.sidenav-inner {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+.sidenav-toggle {
+  background: transparent;
+  border: none;
+  align-self: flex-end;
+  cursor: pointer;
+  color: var(--muted);
+  font-size: 0.95rem;
+}
+.sidenav-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+.nav-item {
+  padding: 0.6rem 0.75rem;
+  border-radius: 8px;
+  color: var(--text);
+  text-decoration: none;
+  font-weight: 600;
+}
+.nav-item.active {
+  background: linear-gradient(90deg, rgba(100,108,255,0.12), rgba(255,122,85,0.04));
+  color: var(--accent);
+}
+.dashboard-main {
+  flex: 1 1 auto;
+  background: var(--surface);
+  border-radius: 12px;
+  padding: 1rem;
+  box-shadow: 0 6px 22px rgba(2, 6, 23, 0.04);
+}
+.dashboard-overview .dashboard-cards {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+.dashboard-overview .card {
+  background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(0,0,0,0.02));
+  border-radius: 10px;
+  padding: 1rem;
+  min-width: 10rem;
+  box-shadow: 0 6px 18px rgba(2,6,23,0.04);
+}
+.dashboard-placeholder {
+  padding: 1rem;
+  color: var(--muted);
+}
+
+@media (max-width: 900px) {
+  .dashboard-layout {
+    flex-direction: column;
+    margin: 0.5rem;
+  }
+  .sidenav {
+    width: 100%;
+    display: flex;
+    flex-direction: row;
+    gap: 0.5rem;
+    align-items: center;
+    padding: 0.5rem;
+  }
+  .sidenav.collapsed {
+    width: 100%;
+  }
+  .sidenav-nav {
+    flex-direction: row;
+    overflow-x: auto;
+  }
+  .nav-item {
+    white-space: nowrap;
+  }
+}
+
+
 /* ---------- Additional mobile refinements ---------- */
 /* Ensure search box and header scale nicely on small screens */
 @media (max-width: 768px) {

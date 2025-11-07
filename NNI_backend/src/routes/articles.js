@@ -449,6 +449,12 @@ router.post(
         status = "DRAFT",
         category,
         tags,
+        metaTitle,
+        metaDescription,
+        metaKeywords,
+        canonical,
+        featuredImageName,
+        featuredImageAlt,
       } = req.body;
 
       // Normalize tags: accept JSON string, comma-separated string, or array
@@ -539,6 +545,11 @@ router.post(
 
       // build create payload; declare outside so catch/retry handlers can
       // access and mutate it in case of slug conflicts
+      // server-side fallbacks: ensure metaTitle/metaDescription are at least
+      // derived from title/excerpt if not provided to improve SEO metadata
+      const safeMetaTitle = metaTitle || title || null;
+      const safeMetaDescription = metaDescription || excerpt || null;
+
       let createData = {
         title,
         slug,
@@ -548,6 +559,13 @@ router.post(
         category: category || undefined,
         tags: typeof tagsArr !== "undefined" ? tagsArr : undefined,
         featuredImage: featuredImageUrl,
+        featuredImageName:
+          featuredImageName || (req.file && req.file.originalname) || undefined,
+        featuredImageAlt: featuredImageAlt || undefined,
+        metaTitle: safeMetaTitle,
+        metaDescription: safeMetaDescription,
+        metaKeywords: metaKeywords || undefined,
+        canonical: canonical || undefined,
         author: {
           connect: {
             id: req.user.id,
@@ -655,7 +673,20 @@ router.put(
       if (!prisma)
         return res.status(503).json({ error: "Database not configured" });
 
-      const { title, content, excerpt, status, category, tags } = req.body;
+      const {
+        title,
+        content,
+        excerpt,
+        status,
+        category,
+        tags,
+        metaTitle,
+        metaDescription,
+        metaKeywords,
+        canonical,
+        featuredImageName,
+        featuredImageAlt,
+      } = req.body;
 
       // Normalize tags on update similar to create
       let tagsArr = undefined;
@@ -691,6 +722,10 @@ router.put(
           max: 5000,
         });
       }
+      // server-side fallbacks for metadata
+      const safeUpdateMetaTitle = metaTitle || title || undefined;
+      const safeUpdateMetaDescription = metaDescription || excerpt || undefined;
+
       const updates = {
         title,
         content,
@@ -699,6 +734,14 @@ router.put(
         ...(typeof category !== "undefined" ? { category } : {}),
         ...(typeof tagsArr !== "undefined" ? { tags: tagsArr } : {}),
         ...(req.file ? { featuredImage: req.file.location } : {}),
+        ...(featuredImageName ? { featuredImageName } : {}),
+        ...(featuredImageAlt ? { featuredImageAlt } : {}),
+        ...(safeUpdateMetaTitle ? { metaTitle: safeUpdateMetaTitle } : {}),
+        ...(typeof safeUpdateMetaDescription !== "undefined"
+          ? { metaDescription: safeUpdateMetaDescription }
+          : {}),
+        ...(metaKeywords ? { metaKeywords } : {}),
+        ...(canonical ? { canonical } : {}),
         // explicitly set publishedAt when publishing, or clear it when
         // changing back to draft/unpublished so the publishedAt value
         // correctly reflects the article state.

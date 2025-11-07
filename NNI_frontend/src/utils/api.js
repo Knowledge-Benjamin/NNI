@@ -52,7 +52,21 @@ export async function getArticles(status = "DRAFT") {
 }
 
 export async function createArticle(
-  { title, content, excerpt, status = "DRAFT", featuredImage },
+  {
+    title,
+    content,
+    excerpt,
+    status = "DRAFT",
+    featuredImage,
+    category,
+    tags,
+    metaTitle,
+    metaDescription,
+    metaKeywords,
+    canonical,
+    featuredImageName,
+    featuredImageAlt,
+  },
   token
 ) {
   // If featuredImage is a File (binary), send as multipart/form-data so
@@ -65,14 +79,24 @@ export async function createArticle(
     fd.append("excerpt", excerpt);
     fd.append("status", status);
     fd.append("featuredImage", featuredImage);
-    // include optional category and tags when present on the payload
-    if (typeof arguments[0].category !== "undefined") {
-      fd.append("category", arguments[0].category);
+    // include optional fields when present on the payload
+    if (typeof category !== "undefined") fd.append("category", category);
+    if (typeof tags !== "undefined") {
+      fd.append(
+        "tags",
+        Array.isArray(tags) ? JSON.stringify(tags) : String(tags)
+      );
     }
-    if (typeof arguments[0].tags !== "undefined") {
-      const t = arguments[0].tags;
-      fd.append("tags", Array.isArray(t) ? JSON.stringify(t) : String(t));
-    }
+    if (typeof metaTitle !== "undefined") fd.append("metaTitle", metaTitle);
+    if (typeof metaDescription !== "undefined")
+      fd.append("metaDescription", metaDescription);
+    if (typeof metaKeywords !== "undefined")
+      fd.append("metaKeywords", metaKeywords);
+    if (typeof canonical !== "undefined") fd.append("canonical", canonical);
+    if (typeof featuredImageName !== "undefined")
+      fd.append("featuredImageName", featuredImageName);
+    if (typeof featuredImageAlt !== "undefined")
+      fd.append("featuredImageAlt", featuredImageAlt);
     return await request(`/api/articles`, {
       method: "POST",
       body: fd,
@@ -91,6 +115,12 @@ export async function createArticle(
       featuredImage: featuredImage || null,
       category: arguments[0].category,
       tags: arguments[0].tags,
+      metaTitle: arguments[0].metaTitle,
+      metaDescription: arguments[0].metaDescription,
+      metaKeywords: arguments[0].metaKeywords,
+      canonical: arguments[0].canonical,
+      featuredImageName: arguments[0].featuredImageName,
+      featuredImageAlt: arguments[0].featuredImageAlt,
     },
     token,
   });
@@ -98,7 +128,21 @@ export async function createArticle(
 
 export async function updateArticle(
   id,
-  { title, content, excerpt, status = "DRAFT", featuredImage },
+  {
+    title,
+    content,
+    excerpt,
+    status = "DRAFT",
+    featuredImage,
+    category,
+    tags,
+    metaTitle,
+    metaDescription,
+    metaKeywords,
+    canonical,
+    featuredImageName,
+    featuredImageAlt,
+  },
   token
 ) {
   if (featuredImage instanceof File) {
@@ -108,13 +152,22 @@ export async function updateArticle(
     fd.append("excerpt", excerpt);
     fd.append("status", status);
     fd.append("featuredImage", featuredImage);
-    if (typeof arguments[1].category !== "undefined") {
-      fd.append("category", arguments[1].category);
-    }
-    if (typeof arguments[1].tags !== "undefined") {
-      const t = arguments[1].tags;
-      fd.append("tags", Array.isArray(t) ? JSON.stringify(t) : String(t));
-    }
+    if (typeof category !== "undefined") fd.append("category", category);
+    if (typeof tags !== "undefined")
+      fd.append(
+        "tags",
+        Array.isArray(tags) ? JSON.stringify(tags) : String(tags)
+      );
+    if (typeof metaTitle !== "undefined") fd.append("metaTitle", metaTitle);
+    if (typeof metaDescription !== "undefined")
+      fd.append("metaDescription", metaDescription);
+    if (typeof metaKeywords !== "undefined")
+      fd.append("metaKeywords", metaKeywords);
+    if (typeof canonical !== "undefined") fd.append("canonical", canonical);
+    if (typeof featuredImageName !== "undefined")
+      fd.append("featuredImageName", featuredImageName);
+    if (typeof featuredImageAlt !== "undefined")
+      fd.append("featuredImageAlt", featuredImageAlt);
     return await request(`/api/articles/${encodeURIComponent(id)}`, {
       method: "PUT",
       body: fd,
@@ -131,8 +184,14 @@ export async function updateArticle(
       excerpt,
       status,
       featuredImage: featuredImage || null,
-      category: arguments[1].category,
-      tags: arguments[1].tags,
+      category: category,
+      tags: tags,
+      metaTitle: metaTitle,
+      metaDescription: metaDescription,
+      metaKeywords: metaKeywords,
+      canonical: canonical,
+      featuredImageName: featuredImageName,
+      featuredImageAlt: featuredImageAlt,
     },
     token,
   });

@@ -91,6 +91,13 @@ export default function CMS() {
       status: "DRAFT",
       category: "Olympics",
       tags: [],
+      // metadata fields
+      metaTitle: "",
+      metaDescription: "",
+      metaKeywords: "",
+      canonical: "",
+      featuredImageName: "",
+      featuredImageAlt: "",
     };
     setArticles([newArticle, ...articles]);
     setSelected(newArticle);
@@ -552,6 +559,114 @@ export default function CMS() {
                     Remove
                   </button>
                 </div>
+              </div>
+
+              {/* Featured image name / alt and metadata fields */}
+              <div
+                style={{ marginTop: "0.75rem", display: "grid", gap: "0.5rem" }}
+              >
+                <label className="field">
+                  <span className="label">Featured image name</span>
+                  <input
+                    className="input"
+                    placeholder="e.g. olympics-opening-ceremony"
+                    value={selected.featuredImageName || ""}
+                    onChange={(e) =>
+                      setSelected((s) => ({
+                        ...s,
+                        featuredImageName: e.target.value,
+                      }))
+                    }
+                  />
+                </label>
+
+                <label className="field">
+                  <span className="label">Featured image alt text</span>
+                  <input
+                    className="input"
+                    placeholder="Describe the image for accessibility"
+                    value={selected.featuredImageAlt || ""}
+                    onChange={(e) =>
+                      setSelected((s) => ({
+                        ...s,
+                        featuredImageAlt: e.target.value,
+                      }))
+                    }
+                  />
+                </label>
+
+                <details style={{ padding: "0.5rem" }}>
+                  <summary style={{ cursor: "pointer", fontWeight: 700 }}>
+                    Post metadata
+                  </summary>
+                  <div
+                    style={{
+                      marginTop: "0.5rem",
+                      display: "grid",
+                      gap: "0.5rem",
+                    }}
+                  >
+                    <label className="field">
+                      <span className="label">Meta title</span>
+                      <input
+                        className="input"
+                        value={selected.metaTitle || ""}
+                        onChange={(e) =>
+                          setSelected((s) => ({
+                            ...s,
+                            metaTitle: e.target.value,
+                          }))
+                        }
+                      />
+                    </label>
+
+                    <label className="field">
+                      <span className="label">Meta description</span>
+                      <textarea
+                        className="input"
+                        rows={3}
+                        value={selected.metaDescription || ""}
+                        onChange={(e) =>
+                          setSelected((s) => ({
+                            ...s,
+                            metaDescription: e.target.value,
+                          }))
+                        }
+                      />
+                    </label>
+
+                    <label className="field">
+                      <span className="label">
+                        Meta keywords (comma separated)
+                      </span>
+                      <input
+                        className="input"
+                        value={selected.metaKeywords || ""}
+                        onChange={(e) =>
+                          setSelected((s) => ({
+                            ...s,
+                            metaKeywords: e.target.value,
+                          }))
+                        }
+                      />
+                    </label>
+
+                    <label className="field">
+                      <span className="label">Canonical URL</span>
+                      <input
+                        className="input"
+                        placeholder="https://example.com/your-article"
+                        value={selected.canonical || ""}
+                        onChange={(e) =>
+                          setSelected((s) => ({
+                            ...s,
+                            canonical: e.target.value,
+                          }))
+                        }
+                      />
+                    </label>
+                  </div>
+                </details>
               </div>
             </div>
 
