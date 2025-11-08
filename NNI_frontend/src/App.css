@@ -43,6 +43,32 @@
   min-height: 100%; /* ensure footer can stick to bottom */
 }
 
+/* Prevent horizontal overflow on small screens by allowing flex/grid children to shrink
+   and ensuring media elements can't exceed their container width. Avoids using
+   overflow-x: hidden so the layout remains accessible. */
+main,
+.container,
+.articles-container,
+.article-card,
+.dashboard-layout,
+.dashboard-main,
+.cms-main,
+.sidebar,
+.cms-list {
+  min-width: 0;
+  max-width: 100%;
+}
+
+img,
+picture,
+video,
+iframe,
+svg {
+  max-width: 100%;
+  height: auto;
+  display: block;
+}
+
 /* Navigation */
 header {
   background-color: var(--header-bg);
