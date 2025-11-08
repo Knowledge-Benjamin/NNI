@@ -5,12 +5,15 @@
   box-sizing: border-box;
 }
 
-/* Ensure the app can size to the full viewport and allow the React root to stretch */
+/* Ensure the app can size to the full viewport and allow the React root to stretch.
+   Use percentage sizing instead of viewport units (100vw) — viewport-width can
+   include scrollbars on some mobile browsers and cause horizontal overflow. */
 html,
 body,
 #root {
-  height: 100vh;
-  width: 100vw;
+  height: 100%;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 body {

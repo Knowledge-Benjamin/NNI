@@ -1256,6 +1256,22 @@ header nav a:hover {
     min-height: 100%;
     height: 100%;
   }
+
+  /* Ensure main content doesn't cause horizontal overflow on small screens */
+  main {
+    box-sizing: border-box;
+    max-width: 100%;
+    /* allow wrapped content and long words to break instead of overflowing */
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+  }
+
+  /* Make images responsive by default to prevent x-axis overflow */
+  img {
+    max-width: 100%;
+    height: auto;
+    display: block;
+  }
 }
 
 /* Small utility to improve touch targets */
