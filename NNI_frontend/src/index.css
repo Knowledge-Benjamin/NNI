@@ -1,70 +1,79 @@
-﻿* {
+﻿/* Basic reset + sensible defaults. Primary theme variables live in App.css */
+* {
   margin: 0;
   padding: 0;
   box-sizing: border-box;
 }
 
+/* Ensure the app can size to the full viewport and allow the React root to stretch */
+html,
+body,
+#root {
+  height: 100vh;
+  width: 100vw;
+}
+
 body {
   font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
-  background-color: #f4f6f9;
-  color: #333;
+  /* Use theme variable when App.css is loaded; fall back to light colors */
+  background-color: var(--bg, #f5f5f5);
+  color: var(--text, #111827);
   width: 100%;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
-.container {
-  max-width: 100%;
-  margin: 0 auto;
-  /* padding: 1rem; */
-}
-
+/* Keep utility classes but avoid clobbering theme-level container/button rules
+   — App.css provides more specific styling. These utilities are minimalist. */
 .card {
-  background: white;
-  padding: 2rem;
+  background: var(--surface, #ffffff);
+  padding: 1rem;
   border-radius: 12px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 4px 12px rgba(2, 6, 23, 0.06);
   margin: 1rem 0;
 }
 
 .btn {
-  padding: 0.75rem 1.5rem;
+  padding: 0.6rem 1rem;
   border: none;
   border-radius: 8px;
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: transform 120ms ease, box-shadow 120ms ease;
+  background: transparent;
 }
 
+/* Theme-aware primary and danger buttons; colors pick up from App.css variables */
 .btn-primary {
-  background-color: #2563eb;
-  color: white;
+  background-color: var(--btn-bg, #2563eb);
+  color: #fff;
 }
-
 .btn-primary:hover {
-  background-color: #1d4ed8;
+  filter: brightness(0.95);
 }
-
 .btn-danger {
-  background-color: #dc2626;
-  color: white;
+  background-color: var(--danger, #dc2626);
+  color: #fff;
 }
 
-.btn-danger:hover {
-  background-color: #b91c1c;
-}
-
-input {
+input,
+textarea,
+select {
   width: 100%;
-  padding: 0.75rem;
+  padding: 0.6rem;
   margin: 0.5rem 0;
-  border: 1px solid #d1d5db;
+  border: 1px solid var(--card-border, #e6e9ee);
   border-radius: 8px;
   font-size: 1rem;
+  background: var(--surface, #fff);
 }
 
-input:focus {
+input:focus,
+textarea:focus,
+select:focus {
   outline: none;
-  border-color: #2563eb;
-  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.2);
+  border-color: var(--accent, #2563eb);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
 }
 
 .text-center {

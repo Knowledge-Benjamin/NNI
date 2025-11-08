@@ -9,45 +9,22 @@ export default function CmsList({
   onTogglePublish,
 }) {
   return (
-    <aside
-      className="cms-list"
-      style={{
-        width: "20rem", /* 320px */
-        padding: "1rem",
-        borderRight: "1px solid var(--muted)",
-      }}
-    >
-        <div
-          style={{
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-            marginBottom: "0.5rem",
-          }}
-        >
+    <aside className="cms-list">
+      <div className="cms-list-header">
         <h3>Articles</h3>
         <button className="btn" onClick={onCreate}>
           New
         </button>
       </div>
-      <div style={{ maxHeight: "60vh", overflow: "auto" }}>
+      <div className="cms-list-scroll">
         {articles.length === 0 && <div className="muted">No articles</div>}
         <ul style={{ listStyle: "none", padding: 0 }}>
           {articles.map((a) => (
-            <li
-              key={a.id}
-              style={{
-                marginBottom: "0.5rem",
-                display: "flex",
-                gap: "0.5rem",
-                alignItems: "center",
-              }}
-            >
+            <li key={a.id} className="cms-list-row">
               <button
                 className={`cms-list-item ${
                   selectedId === a.id ? "active" : ""
                 }`}
-                style={{ flex: 1, textAlign: "left" }}
                 onClick={() => onSelect(a)}
               >
                 <div
@@ -66,13 +43,16 @@ export default function CmsList({
                     {a.status === "PUBLISHED" ? "Published" : "Draft"}
                   </div>
                 </div>
-                <div className="muted" style={{ fontSize: "0.75rem", marginTop: "0.375rem" }}>
+                <div
+                  className="muted"
+                  style={{ fontSize: "0.75rem", marginTop: "0.375rem" }}
+                >
                   {a.publishedAt
                     ? new Date(a.publishedAt).toLocaleString()
                     : "—"}
                 </div>
               </button>
-              <div style={{ display: "flex", gap: 6 }}>
+              <div className="cms-list-actions">
                 {/* Publish/Unpublish toggle for persisted articles */}
                 {a.id && !String(a.id).startsWith("draft-") && (
                   <button

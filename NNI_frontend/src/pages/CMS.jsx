@@ -294,7 +294,7 @@ export default function CMS() {
   }, [selected?.content, excerptLength, excerptTouched]);
 
   return (
-    <div style={{ display: "flex", gap: "1rem", padding: "1rem" }}>
+    <div className="cms-page">
       <CmsList
         articles={articles}
         selectedId={selected?.id}
@@ -304,7 +304,7 @@ export default function CMS() {
         onTogglePublish={handleTogglePublish}
       />
 
-      <section style={{ flex: 1, padding: "1rem" }}>
+      <section className="cms-main">
         <header
           style={{
             display: "flex",
@@ -324,7 +324,7 @@ export default function CMS() {
         </header>
 
         {selected ? (
-          <div style={{ marginTop: "1rem" }}>
+          <div className="cms-top-area">
             {/* Word count and warning */}
             <div
               style={{
@@ -348,14 +348,7 @@ export default function CMS() {
             </div>
 
             {/* Title + Excerpt controls */}
-            <div
-              style={{
-                display: "flex",
-                gap: "0.75rem",
-                marginTop: "0.75rem",
-                alignItems: "flex-start",
-              }}
-            >
+            <div className="cms-controls">
               <div style={{ flex: 1 }}>
                 <label className="field">
                   <span className="label">Title</span>
@@ -381,14 +374,7 @@ export default function CMS() {
                 </label>
               </div>
 
-              <div
-                style={{
-                  minWidth: "12.5rem",
-                  display: "flex",
-                  flexDirection: "column",
-                  gap: "0.5rem",
-                }}
-              >
+              <div className="cms-controls-right">
                 <label style={{ display: "flex", flexDirection: "column" }}>
                   <span className="label">Category</span>
                   <select
@@ -444,7 +430,7 @@ export default function CMS() {
               </div>
             </div>
 
-            <div style={{ marginTop: "0.75rem" }}>
+            <div className="cms-editor-wrapper">
               <CmsEditor
                 value={selected.content}
                 onChange={(html) => setSelected({ ...selected, content: html })}
@@ -456,59 +442,25 @@ export default function CMS() {
             </div>
 
             {/* Featured image preview + replace/remove controls */}
-            <div
-              style={{
-                marginTop: "0.75rem",
-                display: "flex",
-                gap: "0.75rem",
-                alignItems: "center",
-              }}
-            >
-              <div style={{ minWidth: "7.5rem" }}>
+            <div className="cms-featured-row">
+              <div className="cms-featured-preview">
                 <div style={{ fontSize: "0.75rem" }} className="muted">
                   Featured image
                 </div>
                 {selected.featuredImage || featuredImageUrl ? (
                   <img
                     src={selected.featuredImage || featuredImageUrl}
-                    alt="Featured"
-                    style={{
-                      width: "7.5rem",
-                      height: "5rem",
-                      objectFit: "cover",
-                      borderRadius: "0.375rem",
-                      marginTop: "0.375rem",
-                    }}
+                    alt={selected.featuredImageAlt || "Featured"}
+                    className="cms-featured-img"
                   />
                 ) : (
-                  <div
-                    style={{
-                      width: "7.5rem",
-                      height: "5rem",
-                      border: "1px dashed var(--muted)",
-                      borderRadius: "0.375rem",
-                      marginTop: "0.375rem",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                    }}
-                  >
-                    <span
-                      style={{ fontSize: "0.75rem", color: "var(--muted)" }}
-                    >
-                      No image
-                    </span>
+                  <div className="cms-featured-placeholder">
+                    <span>No image</span>
                   </div>
                 )}
               </div>
 
-              <div
-                style={{
-                  display: "flex",
-                  flexDirection: "column",
-                  gap: "0.5rem",
-                }}
-              >
+              <div className="cms-featured-controls">
                 <input
                   type="file"
                   accept="image/*"
@@ -562,9 +514,7 @@ export default function CMS() {
               </div>
 
               {/* Featured image name / alt and metadata fields */}
-              <div
-                style={{ marginTop: "0.75rem", display: "grid", gap: "0.5rem" }}
-              >
+              <div className="cms-meta-grid">
                 <label className="field">
                   <span className="label">Featured image name</span>
                   <input

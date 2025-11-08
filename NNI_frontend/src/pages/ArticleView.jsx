@@ -98,24 +98,9 @@ export default function ArticleView() {
         <h1 className="article-page-title">{article.title}</h1>
 
         {article.tags && article.tags.length > 0 && (
-          <div
-            style={{
-              marginTop: "0.5rem",
-              display: "flex",
-              gap: "0.5rem",
-              flexWrap: "wrap",
-            }}
-          >
+          <div className="article-tags">
             {article.tags.map((t, i) => (
-              <span
-                key={`${t}-${i}`}
-                style={{
-                  fontSize: "0.85rem",
-                  padding: "0.2rem 0.5rem",
-                  background: "#f3f4f6",
-                  borderRadius: "999px",
-                }}
-              >
+              <span key={`${t}-${i}`} className="article-tag">
                 {t}
               </span>
             ))}

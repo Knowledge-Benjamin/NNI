@@ -200,24 +200,9 @@ const ArticleCard = ({ article, featured }) => (
       </h2>
       <p className="article-excerpt">{article.excerpt}</p>
       {article.tags && article.tags.length > 0 && (
-        <div
-          style={{
-            marginTop: "0.5rem",
-            display: "flex",
-            gap: "0.5rem",
-            flexWrap: "wrap",
-          }}
-        >
+        <div className="article-tags">
           {article.tags.map((t, i) => (
-            <span
-              key={`${t}-${i}`}
-              style={{
-                fontSize: "0.8rem",
-                padding: "0.15rem 0.5rem",
-                background: "#f3f4f6",
-                borderRadius: "999px",
-              }}
-            >
+            <span key={`${t}-${i}`} className="article-tag">
               {t}
             </span>
           ))}
@@ -398,25 +383,22 @@ export default function ArticlesView() {
               ))}
             </select>
           </label>
-          <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
-            {tags.map((t) => (
-              <button
-                key={t}
-                onClick={() => setSelectedTag(selectedTag === t ? null : t)}
-                className={selectedTag === t ? "tag-active" : "tag"}
-                style={{
-                  padding: "0.25rem 0.5rem",
-                  borderRadius: "999px",
-                  border: "1px solid #ddd",
-                  background:
-                    selectedTag === t ? "var(--accent)" : "transparent",
-                  color: selectedTag === t ? "#fff" : "inherit",
-                }}
-              >
-                {t}
-              </button>
-            ))}
-          </div>
+          <label style={{ color: "var(--muted)", fontSize: "0.95rem" }}>
+            Tag:&nbsp;
+            <select
+              value={selectedTag || "All"}
+              onChange={(e) =>
+                setSelectedTag(e.target.value === "All" ? null : e.target.value)
+              }
+            >
+              <option value="All">All</option>
+              {tags.map((t) => (
+                <option key={t} value={t}>
+                  {t}
+                </option>
+              ))}
+            </select>
+          </label>
         </div>
         {/* Search indicator */}
         {currentQuery ? (

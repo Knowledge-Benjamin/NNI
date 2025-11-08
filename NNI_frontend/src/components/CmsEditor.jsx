@@ -144,34 +144,21 @@ export default function CmsEditor({ value = "", onChange, onImageUpload }) {
           ref={ref}
           contentEditable
           suppressContentEditableWarning
-          className="cms-content"
+          className="cms-content editable"
           onInput={handleInput}
           onKeyUp={handleSelectChange}
           onMouseUp={handleSelectChange}
           onFocus={() => setIsFocused(true)}
           onBlur={() => setIsFocused(false)}
-          style={{
-            minHeight: "18.75rem", /* 300px */
-            padding: "1rem",
-            border: "1px solid var(--muted)",
-            borderRadius: "0.375rem",
-            background: "var(--bg)",
-          }}
         />
 
-        <div
-          style={{
-            marginTop: "0.5rem",
-            display: "flex",
-            justifyContent: "space-between",
-          }}
-        >
-          <div className="muted" style={{ fontSize: "0.75rem" }}>
+        <div className="cms-editor-footer">
+          <div className="muted cms-editor-stats">
             {selection
               ? `Selection: ${selection.length} chars`
               : "No selection"}
           </div>
-          <div className="muted" style={{ fontSize: "0.75rem" }}>
+          <div className="muted cms-editor-words">
             {content
               ? `${
                   content
