@@ -2,13 +2,32 @@
 <html lang="en">
   <head>
     <meta charset="utf-8" />
+    <!-- Google tag (gtag.js) -->
+    <script
+      async
+      src="https://www.googletagmanager.com/gtag/js?id=G-KX6042N45M"
+    ></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag() {
+        dataLayer.push(arguments);
+      }
+      gtag("js", new Date());
+
+      gtag("config", "G-KX6042N45M");
+    </script>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>NNI News</title>
     <base href="/" />
     <script>
       // Fix base path for www. subdomain
-      if (window.location.hostname === 'www.nni.news' && !document.baseURI.includes('www')) {
-        window.location.replace('https://nni.news' + window.location.pathname + window.location.search);
+      if (
+        window.location.hostname === "www.nni.news" &&
+        !document.baseURI.includes("www")
+      ) {
+        window.location.replace(
+          "https://nni.news" + window.location.pathname + window.location.search
+        );
       }
     </script>
   </head>
