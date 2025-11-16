@@ -65,9 +65,7 @@ export default function Footer() {
 
       <div className="footer-bottom">
         <div className="footer-bottom-left">
-            <small>
-            © {new Date().getFullYear()} NNI — All rights reserved.
-          </small>
+          <small>© {new Date().getFullYear()} NNI — All rights reserved.</small>
         </div>
         <div className="footer-bottom-right">
           <nav className="socials" aria-label="Social links">

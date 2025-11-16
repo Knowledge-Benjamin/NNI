@@ -17,7 +17,14 @@ body,
 }
 
 body {
-  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+  font-family: var(
+    --font-sans,
+    "Segoe UI",
+    Tahoma,
+    Geneva,
+    Verdana,
+    sans-serif
+  );
   /* Use theme variable when App.css is loaded; fall back to light colors */
   background-color: var(--bg, #f5f5f5);
   color: var(--text, #111827);
@@ -59,26 +66,95 @@ html {
 }
 
 .btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
   padding: 0.6rem 1rem;
-  border: none;
-  border-radius: 8px;
-  font-weight: 600;
+  border: 0;
+  border-radius: 0.625rem; /* 10px */
+  font-weight: 700;
+  font-size: 1rem;
+  line-height: 1;
   cursor: pointer;
-  transition: transform 120ms ease, box-shadow 120ms ease;
-  background: transparent;
+  user-select: none;
+  transition: transform 140ms ease, box-shadow 180ms ease, opacity 120ms ease;
+  background: var(--btn-bg-fallback, var(--accent));
+  color: #fff;
+  box-shadow: var(--elevation-1);
 }
 
-/* Theme-aware primary and danger buttons; colors pick up from App.css variables */
-.btn-primary {
-  background-color: var(--btn-bg, #2563eb);
+/* Primary (orange) button — standardized site-wide */
+.btn-primary,
+.subscribe-button,
+.login-button {
+  background: var(--accent);
   color: #fff;
+  border-radius: var(--radius-md, 0.625rem);
+  padding: 0.6rem 1.1rem;
+  box-shadow: 0 8px 20px rgba(37, 99, 235, 0.08);
+  border: none;
+  outline: none;
 }
-.btn-primary:hover {
-  filter: brightness(0.95);
+.btn-primary:hover,
+.subscribe-button:hover,
+.login-button:hover {
+  transform: translateY(-2px);
+  filter: brightness(0.98);
 }
+.btn-primary:active,
+.subscribe-button:active,
+.login-button:active {
+  transform: translateY(0);
+  opacity: 0.98;
+}
+.btn[disabled],
+.btn:disabled,
+.subscribe-button[disabled],
+.login-button[disabled] {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* Ghost / outline variant */
+.btn-ghost {
+  background: transparent;
+  color: var(--text);
+  border: 1px solid rgba(15, 23, 36, 0.06);
+  box-shadow: none;
+}
+
+/* Danger variant */
 .btn-danger {
-  background-color: var(--danger, #dc2626);
+  background: #dc2626;
   color: #fff;
+  border: none;
+  outline: none;
+}
+
+/* Larger touch targets on mobile */
+@media (max-width: 900px) {
+  .btn,
+  .btn-primary,
+  .subscribe-button,
+  .login-button {
+    padding: 0.9rem 1.2rem;
+    font-size: 1rem;
+    min-height: 3rem;
+    border-radius: 0.75rem;
+    border: none;
+    outline: none;
+  }
+}
+
+/* Focus styles without using outline to match 'no outline' requirement, keep accessibility by using box-shadow */
+.btn:focus-visible,
+.btn-primary:focus-visible,
+.subscribe-button:focus-visible,
+.login-button:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 4px rgba(255, 90, 60, 0.12), 0 8px 20px rgba(2, 6, 23, 0.06);
 }
 
 input,

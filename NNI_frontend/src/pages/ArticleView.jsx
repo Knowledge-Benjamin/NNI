@@ -7,6 +7,7 @@ export default function ArticleView() {
   const [article, setArticle] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [progress, setProgress] = useState(0);
 
   useEffect(() => {
     let mounted = true;
@@ -22,6 +23,19 @@ export default function ArticleView() {
       }
     }
     load();
+    // reading progress listener
+    function onScroll() {
+      const el = document.querySelector('.article-content');
+      if (!el) return setProgress(0);
+      const rect = el.getBoundingClientRect();
+      const windowHeight = window.innerHeight || document.documentElement.clientHeight;
+      const total = Math.max(1, el.scrollHeight - windowHeight + 80);
+      const scrolled = Math.min(Math.max(0, windowHeight - rect.top), total);
+      const pct = Math.min(100, Math.round((scrolled / total) * 100));
+      setProgress(pct);
+    }
+    window.addEventListener('scroll', onScroll, { passive: true });
+    onScroll();
     return () => (mounted = false);
   }, [slug]);
 
@@ -57,6 +71,7 @@ export default function ArticleView() {
 
   return (
     <article className="article-page">
+      <div className="reading-progress" style={{ width: `${progress}%` }} aria-hidden="true" />
       <div className="article-hero">
         {topMediaHtml ? (
           <div

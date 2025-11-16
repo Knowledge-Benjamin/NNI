@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { Routes, Route, Link, useLocation } from "react-router-dom";
-import { Helmet } from "react-helmet";
+import { Helmet, HelmetProvider } from "react-helmet-async";
 // import { AuthProvider } from "./context/AuthContext";
 import Home from "./pages/Home";
 import Login from "./pages/Login";
@@ -43,40 +43,42 @@ export default function App() {
   const location = useLocation();
 
   return (
-    <div className="container">
-      <Helmet>
-        <link
-          rel="canonical"
-          href={`https://www.nni.news${location.pathname}`}
+    <HelmetProvider>
+      <div className="container">
+        <Helmet>
+          <link
+            rel="canonical"
+            href={`https://www.nni.news${location.pathname}`}
+          />
+        </Helmet>
+        <NavBar
+          theme={theme}
+          toggleTheme={toggleTheme}
+          showLogout={location.pathname === "/login"}
         />
-      </Helmet>
-      <NavBar
-        theme={theme}
-        toggleTheme={toggleTheme}
-        showLogout={location.pathname === "/login"}
-      />
-      <NewsletterModal />
-      <main style={{ marginTop: "1rem" }}>
-        <Routes>
-          <Route path="/" element={<Home />} />
-          <Route
-            path="/login"
-            element={<Login theme={theme} toggleTheme={toggleTheme} />}
-          />
-          <Route path="/article/:slug" element={<ArticleView />} />
-          <Route
-            path="/cms"
-            element={
-              <ProtectedRoute requiredRole="ADMIN">
-                <CMS />
-              </ProtectedRoute>
-            }
-          />
-          <Route path="/about" element={<About />} />
-          <Route path="/dashboard/*" element={<Dashboard />} />
-        </Routes>
-      </main>
-      <Footer />
-    </div>
+        <NewsletterModal />
+        <main style={{ marginTop: "1rem" }}>
+          <Routes>
+            <Route path="/" element={<Home />} />
+            <Route
+              path="/login"
+              element={<Login theme={theme} toggleTheme={toggleTheme} />}
+            />
+            <Route path="/article/:slug" element={<ArticleView />} />
+            <Route
+              path="/cms"
+              element={
+                <ProtectedRoute requiredRole="ADMIN">
+                  <CMS />
+                </ProtectedRoute>
+              }
+            />
+            <Route path="/about" element={<About />} />
+            <Route path="/dashboard/*" element={<Dashboard />} />
+          </Routes>
+        </main>
+        <Footer />
+      </div>
+    </HelmetProvider>
   );
 }
