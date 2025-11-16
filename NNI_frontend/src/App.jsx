@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { Routes, Route, Link, useLocation } from "react-router-dom";
+import { Helmet } from "react-helmet";
 // import { AuthProvider } from "./context/AuthContext";
 import Home from "./pages/Home";
 import Login from "./pages/Login";
@@ -43,6 +44,12 @@ export default function App() {
 
   return (
     <div className="container">
+      <Helmet>
+        <link
+          rel="canonical"
+          href={`https://www.nni.news${location.pathname}`}
+        />
+      </Helmet>
       <NavBar
         theme={theme}
         toggleTheme={toggleTheme}
