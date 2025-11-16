@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from "react";
 import { Routes, Route, Link, useLocation } from "react-router-dom";
-import { Helmet, HelmetProvider } from "react-helmet-async";
+// We intentionally avoid react-helmet packages to prevent peer-dependency issues
+// with React 19. Instead we programmatically set the canonical link in a
+// useEffect below.
 // import { AuthProvider } from "./context/AuthContext";
 import Home from "./pages/Home";
 import Login from "./pages/Login";
@@ -42,43 +44,52 @@ export default function App() {
   const toggleTheme = () => setTheme((t) => (t === "dark" ? "light" : "dark"));
   const location = useLocation();
 
+  useEffect(() => {
+    try {
+      const href = `https://www.nni.news${location.pathname}`;
+      let link = document.querySelector("link[rel='canonical']");
+      if (link) {
+        link.setAttribute("href", href);
+      } else {
+        link = document.createElement("link");
+        link.setAttribute("rel", "canonical");
+        link.setAttribute("href", href);
+        document.head.appendChild(link);
+      }
+    } catch (e) {
+      // ignore DOM exceptions in non-browser environments
+    }
+  }, [location.pathname]);
+
   return (
-    <HelmetProvider>
-      <div className="container">
-        <Helmet>
-          <link
-            rel="canonical"
-            href={`https://www.nni.news${location.pathname}`}
+    <div className="container">
+      <NavBar
+        theme={theme}
+        toggleTheme={toggleTheme}
+        showLogout={location.pathname === "/login"}
+      />
+      <NewsletterModal />
+      <main style={{ marginTop: "1rem" }}>
+        <Routes>
+          <Route path="/" element={<Home />} />
+          <Route
+            path="/login"
+            element={<Login theme={theme} toggleTheme={toggleTheme} />}
           />
-        </Helmet>
-        <NavBar
-          theme={theme}
-          toggleTheme={toggleTheme}
-          showLogout={location.pathname === "/login"}
-        />
-        <NewsletterModal />
-        <main style={{ marginTop: "1rem" }}>
-          <Routes>
-            <Route path="/" element={<Home />} />
-            <Route
-              path="/login"
-              element={<Login theme={theme} toggleTheme={toggleTheme} />}
-            />
-            <Route path="/article/:slug" element={<ArticleView />} />
-            <Route
-              path="/cms"
-              element={
-                <ProtectedRoute requiredRole="ADMIN">
-                  <CMS />
-                </ProtectedRoute>
-              }
-            />
-            <Route path="/about" element={<About />} />
-            <Route path="/dashboard/*" element={<Dashboard />} />
-          </Routes>
-        </main>
-        <Footer />
-      </div>
-    </HelmetProvider>
+          <Route path="/article/:slug" element={<ArticleView />} />
+          <Route
+            path="/cms"
+            element={
+              <ProtectedRoute requiredRole="ADMIN">
+                <CMS />
+              </ProtectedRoute>
+            }
+          />
+          <Route path="/about" element={<About />} />
+          <Route path="/dashboard/*" element={<Dashboard />} />
+        </Routes>
+      </main>
+      <Footer />
+    </div>
   );
 }
