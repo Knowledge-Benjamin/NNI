@@ -117,6 +117,7 @@ header {
   max-width: 80rem; /* 1280px */
   margin: 0 auto;
   padding: 0 1rem;
+  position: relative; /* allow absolute-positioned mobile nav to align to header content */
 }
 
 header nav {
@@ -130,6 +131,10 @@ header nav a {
   color: var(--header-text);
   font-size: 0.9rem;
   font-weight: 500;
+}
+
+header nav a {
+  padding: 0.5rem 0.25rem;
 }
 
 .subscribe-button {
@@ -262,9 +267,9 @@ header nav a:hover {
   align-items: center;
 }
 .article-page-title {
-  font-size: 2.25rem;
-  line-height: 1.05;
-  margin: 0.5rem 0 1rem;
+  font-size: clamp(1.5rem, 3.4vw, 2.25rem);
+  line-height: 1.08;
+  margin: 0.6rem 0 1rem;
   font-weight: 800;
   color: var(--text);
 }
@@ -371,7 +376,7 @@ header nav a:hover {
 }
 
 .article-title {
-  font-size: 1.5rem;
+  font-size: clamp(1.125rem, 2vw, 1.5rem);
   font-weight: 600;
   color: var(--text);
   margin: 0.5rem 0;
@@ -396,6 +401,164 @@ header nav a:hover {
   gap: 1rem;
   margin-bottom: 1.5rem;
   align-items: start;
+}
+
+/* Mobile-first responsive overrides and UX improvements */
+/* Navigation: hamburger, mobile overlay nav */
+.hamburger {
+  display: none;
+  width: 2.25rem;
+  height: 2.25rem;
+  background: transparent;
+  border: none;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 0.25rem;
+  cursor: pointer;
+}
+.hamburger span {
+  display: block;
+  height: 0.125rem; /* 2px */
+  background: var(--header-text);
+  border-radius: 1rem;
+  transition: transform 180ms ease, opacity 180ms ease;
+}
+.hamburger.open span:nth-child(1) {
+  transform: translateY(0.55rem) rotate(45deg);
+}
+.hamburger.open span:nth-child(2) {
+  opacity: 0;
+}
+.hamburger.open span:nth-child(3) {
+  transform: translateY(-0.55rem) rotate(-45deg);
+}
+
+header nav {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+}
+
+/* Mobile behavior */
+@media (max-width: 900px) {
+  .header-left {
+    gap: 1rem;
+  }
+  .search-box {
+    width: 12rem; /* more compact on phones */
+  }
+  .header-content {
+    padding: 0 0.75rem;
+  }
+  .hamburger {
+    display: flex;
+  }
+  header nav {
+    position: absolute;
+    right: 0;
+    top: 100%;
+    background: var(--surface);
+    color: var(--text);
+    width: min(90%, 18rem);
+    max-width: 20rem;
+    transform: translateY(0.5rem) scale(0.98);
+    opacity: 0;
+    pointer-events: none;
+    border-radius: 0.5rem;
+    box-shadow: 0 8px 24px rgba(2, 6, 23, 0.12);
+    padding: 0.75rem;
+    flex-direction: column;
+    gap: 0.5rem;
+    transition: opacity 160ms ease, transform 160ms ease;
+    z-index: 1200;
+  }
+  header nav.mobile-open {
+    opacity: 1;
+    pointer-events: auto;
+    transform: translateY(0) scale(1);
+  }
+  header nav a,
+  header nav .subscribe-button,
+  header nav .login-button {
+    width: 100%;
+  }
+}
+
+/* Article / list responsiveness: stack columns on smaller screens */
+@media (max-width: 900px) {
+  .articles-container {
+    display: block;
+    padding: 0 0.75rem;
+  }
+  .article-grid {
+    grid-template-columns: 1fr;
+  }
+  .article-card {
+    grid-template-columns: 1fr;
+    gap: 0.75rem;
+  }
+  .article-image {
+    height: 10rem; /* 160px approx */
+    border-radius: 0.5rem;
+  }
+  .article-page {
+    margin: 0.75rem;
+    padding: 0.75rem;
+  }
+  .article-hero .article-media {
+    max-height: 18rem; /* lower height for phones */
+  }
+  .article-video-placeholder .play-overlay {
+    width: 3.25rem;
+    height: 3.25rem;
+    font-size: 1.125rem;
+  }
+}
+
+/* Tablets: slightly larger layout and spacing */
+@media (min-width: 901px) and (max-width: 1200px) {
+  .articles-container {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 1rem;
+    padding: 0 1rem;
+  }
+  .article-hero .article-media {
+    max-height: 24rem;
+  }
+}
+
+/* Page loader (full-screen friendly, rem-based) */
+.page-loader {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.6);
+  backdrop-filter: blur(4px);
+  z-index: 2000;
+}
+.page-loader .spinner {
+  width: 3rem;
+  height: 3rem;
+  border-radius: 9999px;
+  border: 0.4rem solid rgba(0, 0, 0, 0.08);
+  border-top-color: var(--accent);
+  animation: spin 900ms linear infinite;
+}
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Improve readability on large screens */
+@media (min-width: 1400px) {
+  .container {
+    max-width: 1200px;
+    margin: 0 auto;
+  }
 }
 
 .sidebar-article-image {
@@ -452,6 +615,17 @@ header nav a:hover {
 .error {
   color: #ffb4a9;
   border: 1px solid rgba(255, 84, 0, 0.08);
+}
+
+/* Ensure interactive elements are comfortably tappable on mobile */
+button,
+a.subscribe-button,
+.login-button,
+header nav a,
+.nav-user {
+  min-height: 2.25rem;
+  min-width: 2.25rem;
+  padding: 0.5rem 0.75rem;
 }
 
 /* Theme toggle button */
@@ -907,7 +1081,7 @@ header nav a:hover {
   max-width: 1200px;
 }
 .sidenav {
-  width: 220px;
+  width: 13.75rem; /* 220px in rem */
   background: var(--surface);
   border-radius: 12px;
   padding: 0.75rem;
@@ -917,7 +1091,7 @@ header nav a:hover {
   transition: width 180ms ease;
 }
 .sidenav.collapsed {
-  width: 72px;
+  width: 4.5rem; /* 72px in rem */
 }
 .sidenav-inner {
   display: flex;

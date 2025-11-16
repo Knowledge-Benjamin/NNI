@@ -26,6 +26,28 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
+/* Base font sizing with rem-friendly scale. Keep 1rem = 16px at default.
+   Use a small responsive shrink on very narrow screens and slightly larger
+   on tablets/desktops. This makes all rem-based spacing scale proportionally.
+*/
+html {
+  font-size: 16px; /* default */
+}
+
+@media (max-width: 400px) {
+  /* iPhone SE and very small phones: slightly reduce base size */
+  html {
+    font-size: 15px;
+  }
+}
+
+@media (min-width: 1024px) {
+  /* iPad landscape / Macs: slightly larger base for readability */
+  html {
+    font-size: 17px;
+  }
+}
+
 /* Keep utility classes but avoid clobbering theme-level container/button rules
    — App.css provides more specific styling. These utilities are minimalist. */
 .card {

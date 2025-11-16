@@ -77,7 +77,11 @@ export default function NavBar({ theme, toggleTheme }) {
           <span />
         </button>
 
-        <nav className={mobileOpen ? "mobile-open" : ""}>
+        <nav
+          role="navigation"
+          aria-label="Main navigation"
+          className={mobileOpen ? "mobile-open" : ""}
+        >
           <button
             onClick={toggleTheme}
             className="theme-toggle"
