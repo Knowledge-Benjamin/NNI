@@ -73,10 +73,7 @@ export default function App() {
             }
           />
           <Route path="/about" element={<About />} />
-          <Route
-            path="/dashboard/*"
-            element={<Dashboard />}
-          />
+          <Route path="/dashboard/*" element={<Dashboard />} />
         </Routes>
       </main>
       <Footer />
