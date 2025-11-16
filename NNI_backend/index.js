@@ -75,15 +75,29 @@ const app = express();
 // CORS configuration
 app.use(
   cors({
-    origin:
-      NODE_ENV === "production"
-        ? process.env.FRONTEND_URL
-        : ["http://localhost:5173", "http://127.0.0.1:5173"],
-    credentials: true,
-    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-    allowedHeaders: ["Content-Type", "Authorization"]
-      ? "https://yourdomain.com"
-      : ["http://localhost:5173", "http://localhost:5000"],
+    origin: function (origin, callback) {
+      // Allow requests with no origin (e.g., mobile apps, curl) or from our dev hosts
+      const devAllowed = [
+        "http://localhost:5173",
+        "http://127.0.0.1:5173",
+        "http://localhost:5000",
+      ];
+      const frontendUrl = process.env.FRONTEND_URL || null;
+
+      if (!origin) return callback(null, true);
+      if (NODE_ENV === "production") {
+        if (frontendUrl && origin === frontendUrl) return callback(null, true);
+        return callback(new Error("CORS: Unauthorized origin"), false);
+      }
+      // development: allow dev hosts and the configured FRONTEND_URL when present
+      if (
+        devAllowed.includes(origin) ||
+        (frontendUrl && origin === frontendUrl)
+      ) {
+        return callback(null, true);
+      }
+      return callback(new Error("CORS: Unauthorized origin"), false);
+    },
     credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allowedHeaders: [
@@ -98,6 +112,8 @@ app.use(
       "Sec-Fetch-Dest",
     ],
     exposedHeaders: ["Content-Length", "Content-Type"],
+    preflightContinue: false,
+    optionsSuccessStatus: 204,
   })
 );
 
@@ -132,6 +148,9 @@ app.use("/api/auth", require("./src/routes/auth"));
 
 // Articles Routes (protected)
 app.use("/api/articles", require("./src/routes/articles"));
+
+// About (structured sections) - dedicated route for CMS section editing
+app.use("/api/about", require("./src/routes/about"));
 
 // Upload proxy (ImgBB) - server-side upload to hide API key from clients
 app.use("/api/uploads", require("./src/routes/uploads"));

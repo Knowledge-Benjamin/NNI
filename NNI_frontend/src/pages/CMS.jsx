@@ -1,13 +1,706 @@
 import React, { useEffect, useState, useRef, useMemo } from "react";
 import { useAuth } from "../context/AuthContext";
-import CmsEditor from "../components/CmsEditor";
+// CmsEditor removed: About editor now uses structured section-based API only
 import CmsList from "../components/CmsList";
 import * as api from "../utils/api";
 import Toasts from "../components/Toasts";
 import TagInput from "../components/TagInput";
 
+// About editor component: supports freeform HTML or a structured JSON representation
+function AboutEditor({ token, pushToast }) {
+  const [loading, setLoading] = useState(false);
+  const [about, setAbout] = useState(null);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState(null);
+  const featuredFileRef = useRef(null);
+  const [uploadingFeatured, setUploadingFeatured] = useState(false);
+
+  // About editor now uses structured sections only
+  const [structured, setStructured] = useState({
+    hero: {
+      title: "NNI News",
+      subtitle: "Deep Analysis. Verified Truth.",
+      image: "",
+      meta: "",
+    },
+    mission: "",
+    why: "",
+    coreValues: [],
+    stats: [],
+    founder: { name: "", role: "", photo: "", bio: "" },
+    journey: [],
+    team: [],
+    contact: { cta: "", email: "" },
+    notes: "",
+  });
+
+  function setStructuredField(path, value) {
+    setStructured((s) => {
+      const copy = JSON.parse(JSON.stringify(s || {}));
+      const keys = path.split(".");
+      let cur = copy;
+      for (let i = 0; i < keys.length - 1; i++)
+        cur = cur[keys[i]] = cur[keys[i]] || {};
+      cur[keys[keys.length - 1]] = value;
+      return copy;
+    });
+  }
+
+  // Ensure founder appears in the team list for editing and preview.
+  function mergeFounderIntoTeam(sections) {
+    const s = JSON.parse(JSON.stringify(sections || {}));
+    s.team = Array.isArray(s.team) ? s.team.slice() : [];
+    if (s.founder && s.founder.name) {
+      const founderName = String(s.founder.name || "").trim();
+      const exists = s.team.find(
+        (m) => String(m.name || "").trim() === founderName
+      );
+      if (!exists) {
+        s.team.unshift({
+          name: s.founder.name,
+          role: s.founder.role || "",
+          photo: s.founder.photo || null,
+          bio: s.founder.bio || "",
+        });
+      } else {
+        s.team = s.team.map((m) => {
+          if (String(m.name || "").trim() === founderName) {
+            return {
+              name: s.founder.name,
+              role: s.founder.role || m.role,
+              photo: m.photo || s.founder.photo || null,
+              bio: m.bio || s.founder.bio || "",
+            };
+          }
+          return m;
+        });
+      }
+    }
+    return s;
+  }
+
+  function addStat() {
+    setStructured((s) => ({
+      ...s,
+      stats: [...(s.stats || []), { label: "", value: "" }],
+    }));
+  }
+  function removeStat(i) {
+    setStructured((s) => ({
+      ...s,
+      stats: (s.stats || []).filter((_, idx) => idx !== i),
+    }));
+  }
+  function addTeam() {
+    setStructured((s) => ({
+      ...s,
+      team: [...(s.team || []), { name: "", role: "", photo: "", bio: "" }],
+    }));
+  }
+  function removeTeam(i) {
+    setStructured((s) => ({
+      ...s,
+      team: (s.team || []).filter((_, idx) => idx !== i),
+    }));
+  }
+
+  function applyStructuredToAbout() {
+    if (!about) return;
+    const obj = { type: "about", sections: structured };
+    setAbout((a) => ({ ...a, content: JSON.stringify(obj) }));
+  }
+  useEffect(() => {
+    let mounted = true;
+    async function load() {
+      setLoading(true);
+      try {
+        // Try structured about endpoint first
+        try {
+          const r = await api.getAbout();
+          if (!mounted) return;
+          if (r && r.data) {
+            setAbout({
+              id: `about-${Date.now()}`,
+              title: "About NNI",
+              content: JSON.stringify(r.data),
+            });
+            setStructured((prev) => ({
+              ...prev,
+              ...mergeFounderIntoTeam(r.data.sections),
+            }));
+            setLoading(false);
+            return;
+          }
+        } catch (e) {
+          // ignore and fallback to legacy article fetch
+        }
+
+        const res = await api.getArticleBySlug("about-nni");
+        if (!mounted) return;
+        let parsed = null;
+        try {
+          if (res && res.content) parsed = JSON.parse(res.content);
+        } catch (err) {
+          parsed = null;
+        }
+        if (parsed && parsed.type === "about" && parsed.sections) {
+          setAbout(res);
+          setStructured((prev) => ({
+            ...prev,
+            ...mergeFounderIntoTeam(parsed.sections),
+          }));
+        } else {
+          setAbout(res);
+        }
+      } catch (e) {
+        if (e && e.status === 404) {
+          setAbout({
+            id: `about-draft-${Date.now()}`,
+            title: "About NNI",
+            content:
+              "<h2>About NNI</h2><p>Edit this content to update the site About page.</p>",
+            excerpt: "About NNI",
+            status: "DRAFT",
+            category: "News",
+            tags: [],
+          });
+        } else {
+          setError(e?.message || String(e));
+        }
+      } finally {
+        setLoading(false);
+      }
+    }
+    load();
+    return () => (mounted = false);
+  }, []);
+
+  async function handleSave(asPublished = false) {
+    if (!about) return;
+    setSaving(true);
+    setError(null);
+    try {
+      if (!token) throw new Error("Authentication required to save About page");
+      const res = await api.replaceAboutSections(structured, token);
+      if (res && res.data) {
+        setStructured(mergeFounderIntoTeam(res.data.sections || structured));
+        setAbout((a) => ({
+          ...a,
+          content: JSON.stringify({
+            type: "about",
+            sections: res.data.sections || structured,
+          }),
+        }));
+      }
+      pushToast("About page updated", "success");
+    } catch (e) {
+      setError(e?.message || String(e));
+      pushToast(e?.message || "Save failed", "error");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  if (loading) return <div className="muted">Loading About editor…</div>;
+
+  return (
+    <div style={{ marginBottom: "1rem" }}>
+      <h2 style={{ marginTop: 0 }}>About Page Editor</h2>
+
+      <label className="field">
+        <span className="label">Title</span>
+        <input
+          className="input"
+          value={about?.title || ""}
+          onChange={(e) => setAbout((s) => ({ ...s, title: e.target.value }))}
+        />
+      </label>
+
+      <div style={{ marginTop: "0.5rem" }}>
+        <div style={{ marginBottom: ".5rem", fontWeight: 600 }}>
+          Structured About editor (hero, mission, stats, team, contact)
+        </div>
+
+        <div style={{ marginTop: ".5rem", display: "grid", gap: ".5rem" }}>
+          <fieldset>
+            <legend>Hero</legend>
+            <label className="field">
+              <span className="label">Title</span>
+              <input
+                className="input"
+                value={structured.hero?.title || ""}
+                onChange={(e) =>
+                  setStructuredField("hero.title", e.target.value)
+                }
+              />
+            </label>
+            <label className="field">
+              <span className="label">Subtitle</span>
+              <input
+                className="input"
+                value={structured.hero?.subtitle || ""}
+                onChange={(e) =>
+                  setStructuredField("hero.subtitle", e.target.value)
+                }
+              />
+            </label>
+            <label className="field">
+              <span className="label">Background image URL</span>
+              <input
+                className="input"
+                value={structured.hero?.image || ""}
+                onChange={(e) =>
+                  setStructuredField("hero.image", e.target.value)
+                }
+                placeholder="https://..."
+              />
+            </label>
+            <label className="field">
+              <span className="label">Meta line</span>
+              <input
+                className="input"
+                value={structured.hero?.meta || ""}
+                onChange={(e) =>
+                  setStructuredField("hero.meta", e.target.value)
+                }
+              />
+            </label>
+          </fieldset>
+
+          <fieldset>
+            <legend>Mission</legend>
+            <textarea
+              className="input"
+              rows={4}
+              value={structured.mission || ""}
+              onChange={(e) => setStructuredField("mission", e.target.value)}
+            />
+          </fieldset>
+
+          <fieldset>
+            <legend>Stats</legend>
+            {(structured.stats || []).map((st, i) => (
+              <div
+                key={i}
+                style={{
+                  display: "flex",
+                  gap: ".5rem",
+                  alignItems: "center",
+                }}
+              >
+                <input
+                  className="input"
+                  placeholder="Value"
+                  value={st.value || ""}
+                  onChange={(e) => {
+                    const v = e.target.value;
+                    setStructured((s) => {
+                      const copy = JSON.parse(JSON.stringify(s));
+                      copy.stats[i].value = v;
+                      return copy;
+                    });
+                  }}
+                />
+                <input
+                  className="input"
+                  placeholder="Label"
+                  value={st.label || ""}
+                  onChange={(e) => {
+                    const v = e.target.value;
+                    setStructured((s) => {
+                      const copy = JSON.parse(JSON.stringify(s));
+                      copy.stats[i].label = v;
+                      return copy;
+                    });
+                  }}
+                />
+                <button className="btn btn-ghost" onClick={() => removeStat(i)}>
+                  Remove
+                </button>
+              </div>
+            ))}
+            <button className="btn" onClick={addStat}>
+              Add stat
+            </button>
+          </fieldset>
+
+          <fieldset>
+            <legend>Team</legend>
+            {(structured.team || []).map((m, i) => (
+              <div
+                key={i}
+                style={{
+                  borderBottom: "1px solid var(--muted)",
+                  paddingBottom: ".5rem",
+                  marginBottom: ".5rem",
+                }}
+              >
+                <input
+                  className="input"
+                  placeholder="Name"
+                  value={m.name || ""}
+                  onChange={(e) => {
+                    const v = e.target.value;
+                    setStructured((s) => {
+                      const copy = JSON.parse(JSON.stringify(s));
+                      copy.team[i].name = v;
+                      return copy;
+                    });
+                  }}
+                />
+                <input
+                  className="input"
+                  placeholder="Role"
+                  value={m.role || ""}
+                  onChange={(e) => {
+                    const v = e.target.value;
+                    setStructured((s) => {
+                      const copy = JSON.parse(JSON.stringify(s));
+                      copy.team[i].role = v;
+                      return copy;
+                    });
+                  }}
+                />
+                <input
+                  className="input"
+                  placeholder="Photo URL"
+                  value={m.photo || ""}
+                  onChange={(e) => {
+                    const v = e.target.value;
+                    setStructured((s) => {
+                      const copy = JSON.parse(JSON.stringify(s));
+                      copy.team[i].photo = v;
+                      return copy;
+                    });
+                  }}
+                />
+                <textarea
+                  className="input"
+                  rows={2}
+                  placeholder="Bio"
+                  value={m.bio || ""}
+                  onChange={(e) => {
+                    const v = e.target.value;
+                    setStructured((s) => {
+                      const copy = JSON.parse(JSON.stringify(s));
+                      copy.team[i].bio = v;
+                      return copy;
+                    });
+                  }}
+                />
+                <div style={{ marginTop: ".25rem" }}>
+                  <button
+                    className="btn btn-ghost"
+                    onClick={() => removeTeam(i)}
+                  >
+                    Remove member
+                  </button>
+                </div>
+              </div>
+            ))}
+            <button className="btn" onClick={addTeam}>
+              Add team member
+            </button>
+          </fieldset>
+
+          <fieldset>
+            <legend>Contact / Press</legend>
+            <input
+              className="input"
+              placeholder="CTA short line"
+              value={structured.contact?.cta || ""}
+              onChange={(e) =>
+                setStructuredField("contact.cta", e.target.value)
+              }
+            />
+            <input
+              className="input"
+              placeholder="Email"
+              value={structured.contact?.email || ""}
+              onChange={(e) =>
+                setStructuredField("contact.email", e.target.value)
+              }
+            />
+          </fieldset>
+
+          <fieldset>
+            <legend>Why / Purpose</legend>
+            <textarea
+              className="input"
+              rows={4}
+              placeholder="Why NNI exists — short editorial mission or purpose"
+              value={structured.why || ""}
+              onChange={(e) => setStructuredField("why", e.target.value)}
+            />
+          </fieldset>
+
+          <fieldset>
+            <legend>Core Values</legend>
+            {(structured.coreValues || []).map((v, i) => (
+              <div key={i} style={{ marginBottom: ".5rem" }}>
+                <input
+                  className="input"
+                  placeholder="Value title"
+                  value={v.title || ""}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    setStructured((s) => {
+                      const copy = JSON.parse(JSON.stringify(s));
+                      copy.coreValues[i] = copy.coreValues[i] || {};
+                      copy.coreValues[i].title = val;
+                      return copy;
+                    });
+                  }}
+                />
+                <input
+                  className="input"
+                  placeholder="Short description"
+                  value={v.description || ""}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    setStructured((s) => {
+                      const copy = JSON.parse(JSON.stringify(s));
+                      copy.coreValues[i] = copy.coreValues[i] || {};
+                      copy.coreValues[i].description = val;
+                      return copy;
+                    });
+                  }}
+                />
+                <div style={{ marginTop: ".25rem" }}>
+                  <button
+                    className="btn btn-ghost"
+                    onClick={() =>
+                      setStructured((s) => ({
+                        ...s,
+                        coreValues: (s.coreValues || []).filter(
+                          (_, idx) => idx !== i
+                        ),
+                      }))
+                    }
+                  >
+                    Remove
+                  </button>
+                </div>
+              </div>
+            ))}
+            <button
+              className="btn"
+              onClick={() =>
+                setStructured((s) => ({
+                  ...s,
+                  coreValues: [
+                    ...(s.coreValues || []),
+                    { title: "", description: "" },
+                  ],
+                }))
+              }
+            >
+              Add value
+            </button>
+          </fieldset>
+
+          <fieldset>
+            <legend>Founder</legend>
+            <input
+              className="input"
+              placeholder="Name"
+              value={structured.founder?.name || ""}
+              onChange={(e) =>
+                setStructuredField("founder.name", e.target.value)
+              }
+            />
+            <input
+              className="input"
+              placeholder="Role"
+              value={structured.founder?.role || ""}
+              onChange={(e) =>
+                setStructuredField("founder.role", e.target.value)
+              }
+            />
+            <input
+              className="input"
+              placeholder="Photo URL"
+              value={structured.founder?.photo || ""}
+              onChange={(e) =>
+                setStructuredField("founder.photo", e.target.value)
+              }
+            />
+            <textarea
+              className="input"
+              rows={3}
+              placeholder="Short bio"
+              value={structured.founder?.bio || ""}
+              onChange={(e) =>
+                setStructuredField("founder.bio", e.target.value)
+              }
+            />
+          </fieldset>
+
+          <fieldset>
+            <legend>Journey / Timeline</legend>
+            {(structured.journey || []).map((it, i) => (
+              <div key={i} style={{ marginBottom: ".5rem" }}>
+                <input
+                  className="input"
+                  placeholder="Date or milestone"
+                  value={it.date || ""}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    setStructured((s) => {
+                      const copy = JSON.parse(JSON.stringify(s));
+                      copy.journey[i] = copy.journey[i] || {};
+                      copy.journey[i].date = val;
+                      return copy;
+                    });
+                  }}
+                />
+                <input
+                  className="input"
+                  placeholder="Description"
+                  value={it.text || ""}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    setStructured((s) => {
+                      const copy = JSON.parse(JSON.stringify(s));
+                      copy.journey[i] = copy.journey[i] || {};
+                      copy.journey[i].text = val;
+                      return copy;
+                    });
+                  }}
+                />
+                <div style={{ marginTop: ".25rem" }}>
+                  <button
+                    className="btn btn-ghost"
+                    onClick={() =>
+                      setStructured((s) => ({
+                        ...s,
+                        journey: (s.journey || []).filter(
+                          (_, idx) => idx !== i
+                        ),
+                      }))
+                    }
+                  >
+                    Remove
+                  </button>
+                </div>
+              </div>
+            ))}
+            <button
+              className="btn"
+              onClick={() =>
+                setStructured((s) => ({
+                  ...s,
+                  journey: [...(s.journey || []), { date: "", text: "" }],
+                }))
+              }
+            >
+              Add milestone
+            </button>
+          </fieldset>
+
+          <fieldset>
+            <legend>Notes / Legal</legend>
+            <textarea
+              className="input"
+              rows={3}
+              placeholder="Notes, legal disclaimers or editorial notes"
+              value={structured.notes || ""}
+              onChange={(e) => setStructuredField("notes", e.target.value)}
+            />
+          </fieldset>
+
+          <div style={{ display: "flex", gap: ".5rem" }}>
+            <button
+              className="btn"
+              onClick={() => {
+                applyStructuredToAbout();
+                pushToast(
+                  "Structured content applied to About preview",
+                  "success"
+                );
+              }}
+            >
+              Apply to content
+            </button>
+            <button
+              className="btn btn-ghost"
+              onClick={() => setStructured((s) => ({ ...s }))}
+            >
+              Refresh
+            </button>
+          </div>
+
+          <div style={{ marginTop: ".75rem" }}>
+            <h4>Preview</h4>
+            <div
+              style={{
+                border: "1px solid var(--muted)",
+                borderRadius: 8,
+                overflow: "hidden",
+              }}
+            >
+              <div style={{ padding: ".5rem" }}>
+                <h3>{structured.hero?.title}</h3>
+                {structured.hero?.subtitle && (
+                  <p className="lead">{structured.hero.subtitle}</p>
+                )}
+                {structured.mission && <p>{structured.mission}</p>}
+                {structured.stats && structured.stats.length > 0 && (
+                  <div style={{ display: "flex", gap: ".5rem" }}>
+                    {structured.stats.map((st, i) => (
+                      <div
+                        key={i}
+                        style={{
+                          padding: ".5rem",
+                          borderRadius: 6,
+                          background: "var(--bg)",
+                          flex: 1,
+                        }}
+                      >
+                        <div style={{ fontWeight: 700 }}>{st.value}</div>
+                        <div className="muted">{st.label}</div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div style={{ display: "flex", gap: "0.5rem", marginTop: "0.5rem" }}>
+        {!token && (
+          <div className="muted">You must be signed in to save changes.</div>
+        )}
+        <button
+          className="btn"
+          onClick={() => handleSave(false)}
+          disabled={saving || !token}
+        >
+          Save Draft
+        </button>
+        <button
+          className="btn btn-primary"
+          onClick={() => handleSave(true)}
+          disabled={saving || !token}
+        >
+          Save & Publish
+        </button>
+      </div>
+
+      {error && (
+        <div className="auth-error" style={{ marginTop: ".5rem" }}>
+          {error}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function CMS() {
   const { token } = useAuth();
+  const [tab, setTab] = useState(window.location.hash || "");
   const [articles, setArticles] = useState([]);
   const [selected, setSelected] = useState(null);
   const [featuredImageUrl, setFeaturedImageUrl] = useState(null);
@@ -31,13 +724,11 @@ export default function CMS() {
     setToasts((s) => s.filter((t) => t.id !== id));
   }
 
-  // autosave selected draft to localStorage (debounced)
   useEffect(() => {
     if (!selected) return;
     const id = selected.id;
     const handler = setTimeout(() => {
       try {
-        // only autosave if it's a draft or unsaved local id
         localStorage.setItem(
           `cms-draft-${id}`,
           JSON.stringify({
@@ -49,9 +740,7 @@ export default function CMS() {
             tags: selected.tags,
           })
         );
-      } catch (e) {
-        // ignore storage errors
-      }
+      } catch (e) {}
     }, 2000);
     return () => clearTimeout(handler);
   }, [selected]);
@@ -71,7 +760,7 @@ export default function CMS() {
       );
       setArticles(combined);
     } catch (e) {
-      setError(e.message || "Failed to load articles");
+      setError(e?.message || "Failed to load articles");
     } finally {
       setLoading(false);
     }
@@ -79,7 +768,14 @@ export default function CMS() {
 
   useEffect(() => {
     loadAll();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => {
+    function onHash() {
+      setTab(window.location.hash || "");
+    }
+    window.addEventListener("hashchange", onHash);
+    return () => window.removeEventListener("hashchange", onHash);
   }, []);
 
   function handleCreate() {
@@ -91,7 +787,6 @@ export default function CMS() {
       status: "DRAFT",
       category: "Olympics",
       tags: [],
-      // metadata fields
       metaTitle: "",
       metaDescription: "",
       metaKeywords: "",
@@ -101,7 +796,6 @@ export default function CMS() {
     };
     setArticles([newArticle, ...articles]);
     setSelected(newArticle);
-    // persist a local autosave slot for drafts
     try {
       localStorage.setItem(
         `cms-draft-${newArticle.id}`,
@@ -112,17 +806,10 @@ export default function CMS() {
 
   function handleSelect(article) {
     setSelected(article);
-    // if local autosave exists for this article, merge it
     try {
       const raw = localStorage.getItem(`cms-draft-${article.id}`);
-      if (raw) {
-        const parsed = JSON.parse(raw);
-        setSelected((s) => ({ ...article, ...parsed }));
-      }
-    } catch (e) {
-      // ignore
-    }
-    // mark excerpt as touched if the article already has one
+      if (raw) setSelected((s) => ({ ...article, ...JSON.parse(raw) }));
+    } catch (e) {}
     try {
       setExcerptTouched(Boolean(article && article.excerpt));
     } catch (e) {}
@@ -131,7 +818,6 @@ export default function CMS() {
   async function handleDelete(article) {
     if (!confirm(`Delete article "${article.title}"? This cannot be undone.`))
       return;
-    // if it's a persisted article (has numeric/uuid id without draft- prefix)
     if (article.id && !String(article.id).startsWith("draft-")) {
       try {
         await api.deleteArticle(article.id, token);
@@ -139,10 +825,9 @@ export default function CMS() {
         setSelected(null);
         pushToast("Article deleted", "success");
       } catch (e) {
-        pushToast(e.message || "Delete failed", "error");
+        pushToast(e?.message || "Delete failed", "error");
       }
     } else {
-      // local draft, just remove
       setArticles((s) => s.filter((a) => a.id !== article.id));
       setSelected(null);
     }
@@ -152,53 +837,39 @@ export default function CMS() {
     setSaving(true);
     setError(null);
     try {
-      // sanitize content to avoid inline scripts or event handlers
       const safeContent = sanitizeHTML(article.content || "");
       const payload = { ...article, content: safeContent };
-
-      // If featuredImage not explicitly set, try to pull the first
-      // <img src="..."> from the sanitized content and use it as
-      // the featuredImage. This covers the case where an image was
-      // uploaded into the editor but not set via the Replace control.
       if (!payload.featuredImage) {
         const inferred = extractFirstImageUrl(safeContent);
         if (inferred) payload.featuredImage = inferred;
       }
-
       if (article.id && !String(article.id).startsWith("draft-")) {
         const updated = await api.updateArticle(article.id, payload, token);
         setArticles((s) => s.map((a) => (a.id === updated.id ? updated : a)));
         setSelected(updated);
-        // notify other parts of the app that articles changed
         try {
           window.dispatchEvent(new Event("articles-updated"));
         } catch (e) {}
       } else {
         const created = await api.createArticle(payload, token);
-        // Replace local draft with created article
         setArticles((s) => [created, ...s.filter((a) => a.id !== article.id)]);
         setSelected(created);
-        // notify other parts of the app that articles changed
         try {
           window.dispatchEvent(new Event("articles-updated"));
         } catch (e) {}
       }
-
-      // clear any autosave for this draft
       try {
         localStorage.removeItem(`cms-draft-${article.id}`);
       } catch (e) {}
-
       pushToast("Saved", "success");
     } catch (e) {
-      setError(e.message || "Save failed");
-      pushToast(e.message || "Save failed", "error");
+      setError(e?.message || "Save failed");
+      pushToast(e?.message || "Save failed", "error");
     } finally {
       setSaving(false);
     }
   }
 
-  // Publish/unpublish toggle from list
   async function handleTogglePublish(article) {
     if (!article || !article.id || String(article.id).startsWith("draft-"))
       return;
@@ -226,7 +897,6 @@ export default function CMS() {
     }
   }
 
-  // very small sanitizer: strip <script> and on* attributes
   function sanitizeHTML(html) {
     if (!html) return html;
     let s = html.replace(/<script[\s\S]*?>[\s\S]*?<\/script>/gi, "");
@@ -236,7 +906,6 @@ export default function CMS() {
     return s;
   }
 
-  // Convert HTML content to plain text for excerpt generation
   function stripHtmlToText(html) {
     if (!html) return "";
     try {
@@ -245,7 +914,6 @@ export default function CMS() {
       const text = doc.body.textContent || "";
       return String(text).replace(/\s+/g, " ").trim();
     } catch (e) {
-      // fallback
       return String(html)
         .replace(/<[^>]+>/g, "")
         .replace(/\s+/g, " ")
@@ -253,48 +921,59 @@ export default function CMS() {
     }
   }
 
-  // Count words in the provided HTML content (plain-text fallback)
   const wordCount = useMemo(() => {
     if (!selected || !selected.content) return 0;
     const text = stripHtmlToText(selected.content || "");
     if (!text) return 0;
-    // split on whitespace, filter empty
     return text.split(/\s+/).filter(Boolean).length;
   }, [selected?.content]);
 
-  // Extract the first image URL from HTML content, or null if none.
   function extractFirstImageUrl(html) {
     if (!html) return null;
     try {
-      // Use DOMParser in the browser to safely parse the HTML
       const parser = new DOMParser();
       const doc = parser.parseFromString(html, "text/html");
       const img = doc.querySelector("img");
       if (img && img.src) return img.src;
     } catch (e) {
-      // fallback to a regex if DOMParser isn't available for some reason
       const m = html.match(/<img[^>]+src=["']?([^"'>\s]+)["']?/i);
       if (m && m[1]) return m[1];
     }
     return null;
   }
 
-  // Auto-generate excerpt from content when user hasn't manually edited the excerpt.
   useEffect(() => {
     if (!selected) return;
-    if (excerptTouched) return; // don't overwrite manual edits
-
+    if (excerptTouched) return;
     const text = stripHtmlToText(selected.content || "");
     const auto = text.slice(0, excerptLength).trim();
-    // Only update if different to avoid unnecessary state churn
-    if ((selected.excerpt || "") !== auto) {
+    if ((selected.excerpt || "") !== auto)
       setSelected((s) => ({ ...s, excerpt: auto }));
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selected?.content, excerptLength, excerptTouched]);
 
   return (
     <div className="cms-page">
+      <div style={{ display: "flex", gap: "0.5rem", marginBottom: "0.5rem" }}>
+        <button
+          className={`btn ${tab !== "#about" ? "btn-primary" : "btn-ghost"}`}
+          onClick={() => {
+            window.location.hash = "";
+            setTab("");
+          }}
+        >
+          Articles
+        </button>
+        <button
+          className={`btn ${tab === "#about" ? "btn-primary" : "btn-ghost"}`}
+          onClick={() => {
+            window.location.hash = "#about";
+            setTab("#about");
+          }}
+        >
+          About Page
+        </button>
+      </div>
+
       <CmsList
         articles={articles}
         selectedId={selected?.id}
@@ -305,6 +984,10 @@ export default function CMS() {
       />
 
       <section className="cms-main">
+        {tab === "#about" ? (
+          <AboutEditor token={token} pushToast={pushToast} />
+        ) : null}
+
         <header
           style={{
             display: "flex",
@@ -325,10 +1008,9 @@ export default function CMS() {
 
         {selected ? (
           <div className="cms-top-area">
-            {/* Word count and warning */}
             <div
               style={{
-                marginTop: "0.75rem",
+                marginTop: ".75rem",
                 display: "flex",
                 justifyContent: "space-between",
                 alignItems: "center",
@@ -339,15 +1021,12 @@ export default function CMS() {
                 {wordCount > 5000 ? "(exceeds limit)" : ""}
               </small>
               {wordCount > 5000 && (
-                <small
-                  style={{ color: "var(--danger)", marginLeft: "0.75rem" }}
-                >
+                <small style={{ color: "var(--danger)", marginLeft: ".75rem" }}>
                   Please shorten your article to 5000 words or less.
                 </small>
               )}
             </div>
 
-            {/* Title + Excerpt controls */}
             <div className="cms-controls">
               <div style={{ flex: 1 }}>
                 <label className="field">
@@ -360,8 +1039,7 @@ export default function CMS() {
                     }
                   />
                 </label>
-
-                <label className="field" style={{ marginTop: "0.5rem" }}>
+                <label className="field" style={{ marginTop: ".5rem" }}>
                   <span className="label">Excerpt</span>
                   <input
                     className="input"
@@ -402,6 +1080,7 @@ export default function CMS() {
                     placeholder="Add a tag"
                   />
                 </label>
+
                 <label style={{ display: "flex", flexDirection: "column" }}>
                   <span className="label">Excerpt length</span>
                   <select
@@ -417,6 +1096,7 @@ export default function CMS() {
                     <option value={200}>200 chars</option>
                   </select>
                 </label>
+
                 <button
                   className="btn btn-ghost"
                   onClick={() => {
@@ -441,10 +1121,9 @@ export default function CMS() {
               />
             </div>
 
-            {/* Featured image preview + replace/remove controls */}
             <div className="cms-featured-row">
               <div className="cms-featured-preview">
-                <div style={{ fontSize: "0.75rem" }} className="muted">
+                <div style={{ fontSize: ".75rem" }} className="muted">
                   Featured image
                 </div>
                 {selected.featuredImage || featuredImageUrl ? (
@@ -474,14 +1153,10 @@ export default function CMS() {
                       const data = await api.uploadImageToImgBB(f);
                       const url = data?.url || data?.display_url || null;
                       if (url) {
+                        // Article featured-image upload: set preview and selected.article featuredImage
                         setFeaturedImageUrl(url);
                         setSelected((s) => ({ ...s, featuredImage: url }));
                       }
-                    } catch (err) {
-                      pushToast(
-                        (err && err.message) || "Upload failed",
-                        "error"
-                      );
                     } finally {
                       setUploadingFeatured(false);
                       try {
@@ -491,7 +1166,7 @@ export default function CMS() {
                   }}
                 />
 
-                <div style={{ display: "flex", gap: "0.5rem" }}>
+                <div style={{ display: "flex", gap: ".5rem" }}>
                   <button
                     className="btn"
                     onClick={() =>
@@ -513,7 +1188,6 @@ export default function CMS() {
                 </div>
               </div>
 
-              {/* Featured image name / alt and metadata fields */}
               <div className="cms-meta-grid">
                 <label className="field">
                   <span className="label">Featured image name</span>
@@ -529,7 +1203,6 @@ export default function CMS() {
                     }
                   />
                 </label>
-
                 <label className="field">
                   <span className="label">Featured image alt text</span>
                   <input
@@ -544,16 +1217,15 @@ export default function CMS() {
                     }
                   />
                 </label>
-
-                <details style={{ padding: "0.5rem" }}>
+                <details style={{ padding: ".5rem" }}>
                   <summary style={{ cursor: "pointer", fontWeight: 700 }}>
                     Post metadata
                   </summary>
                   <div
                     style={{
-                      marginTop: "0.5rem",
+                      marginTop: ".5rem",
                       display: "grid",
-                      gap: "0.5rem",
+                      gap: ".5rem",
                     }}
                   >
                     <label className="field">
@@ -569,7 +1241,6 @@ export default function CMS() {
                         }
                       />
                     </label>
-
                     <label className="field">
                       <span className="label">Meta description</span>
                       <textarea
@@ -584,7 +1255,6 @@ export default function CMS() {
                         }
                       />
                     </label>
-
                     <label className="field">
                       <span className="label">
                         Meta keywords (comma separated)
@@ -600,7 +1270,6 @@ export default function CMS() {
                         }
                       />
                     </label>
-
                     <label className="field">
                       <span className="label">Canonical URL</span>
                       <input
@@ -620,7 +1289,7 @@ export default function CMS() {
               </div>
             </div>
 
-            <div style={{ marginTop: "0.5rem" }}>
+            <div style={{ marginTop: ".5rem" }}>
               <button
                 className="btn"
                 onClick={() => {
@@ -642,9 +1311,7 @@ export default function CMS() {
               </button>
             </div>
 
-            <div
-              style={{ marginTop: "0.75rem", display: "flex", gap: "0.5rem" }}
-            >
+            <div style={{ marginTop: ".75rem", display: "flex", gap: ".5rem" }}>
               <button
                 className="btn"
                 onClick={() => {

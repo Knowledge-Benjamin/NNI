@@ -56,6 +56,20 @@ model Article {
   @@map("articles")
 }
 
+// Dedicated About table to store structured About page content.
+// This keeps About data separate from regular articles and allows
+// CMS section-based updates without overloading the Article model.
+model About {
+  id        String   @id @default(uuid())
+  slug      String   @unique
+  // sections stored as JSON (hero, mission, stats, team, contact, etc.)
+  sections  Json?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("about")
+}
+
 enum Role {
   ADMIN
   EDITOR

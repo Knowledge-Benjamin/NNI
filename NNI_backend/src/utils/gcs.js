@@ -80,8 +80,7 @@ async function uploadToGCS(buffer, originalname, mimetype) {
       });
 
       blobStream.on("finish", async () => {
-        // Try to make the file public. If that fails (insufficient IAM permissions),
-        // fall back to generating a signed URL so the file remains accessible.
+        // Make the file public
         try {
           await blob.makePublic();
 
@@ -90,18 +89,7 @@ async function uploadToGCS(buffer, originalname, mimetype) {
           resolve(publicUrl);
         } catch (error) {
           console.error("Error making file public:", error);
-          // Attempt to generate a signed URL as a fallback
-          try {
-            const [signedUrl] = await blob.getSignedUrl({
-              action: "read",
-              expires: Date.now() + 60 * 60 * 1000, // 1 hour
-            });
-            console.warn("Falling back to signed URL due to makePublic() failure");
-            resolve(signedUrl);
-          } catch (err2) {
-            console.error("Failed to generate signed URL after makePublic failed:", err2);
-            reject(new Error("Failed to make file public and unable to generate signed URL"));
-          }
+          reject(new Error("Failed to make file public"));
         }
       });
 

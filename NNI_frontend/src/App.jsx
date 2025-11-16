@@ -6,6 +6,7 @@ import Login from "./pages/Login";
 import ArticleView from "./pages/ArticleView";
 import CMS from "./pages/CMS";
 import Dashboard from "./pages/Dashboard";
+import About from "./pages/About";
 import NavBar from "./components/NavBar";
 import Footer from "./components/Footer";
 import ProtectedRoute from "./components/ProtectedRoute";
@@ -64,6 +65,7 @@ export default function App() {
               </ProtectedRoute>
             }
           />
+          <Route path="/about" element={<About />} />
           <Route
             path="/dashboard/*"
             element={<Dashboard />}

@@ -7,7 +7,13 @@ const prisma = new PrismaClient();
 async function main() {
   // Create or update an admin user with the requested credentials
   const email = "admin@nni.news";
-  const plainPassword = "Knowben0181?"; // change this after first run in production
+  // Password must be supplied via environment variable to avoid committing it.
+  const plainPassword = process.env.ADMIN_PASSWORD;
+  if (!plainPassword) {
+    throw new Error(
+      "ADMIN_PASSWORD environment variable must be set to seed admin account."
+    );
+  }
   const hashedPassword = await bcrypt.hash(plainPassword, 12);
 
   // Use upsert so this is idempotent: create if missing, otherwise update password

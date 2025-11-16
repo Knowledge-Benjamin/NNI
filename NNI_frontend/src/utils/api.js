@@ -208,6 +208,31 @@ export async function getArticleBySlug(slug) {
   return await request(`/api/articles/${encodeURIComponent(slug)}`);
 }
 
+// About endpoints (structured sections)
+export async function getAbout() {
+  return await request(`/api/about`);
+}
+
+export async function getAboutSection(section) {
+  return await request(`/api/about/sections/${encodeURIComponent(section)}`);
+}
+
+export async function updateAboutSection(section, value, token) {
+  return await request(`/api/about/sections/${encodeURIComponent(section)}`, {
+    method: "PATCH",
+    body: { value },
+    token,
+  });
+}
+
+export async function replaceAboutSections(sections, token) {
+  return await request(`/api/about`, {
+    method: "PUT",
+    body: { sections },
+    token,
+  });
+}
+
 // NOTE: We use a single uploadImageToImgBB implementation below (keep only one)
 
 // Upload image to ImgBB. Accepts a File and optional apiKey.
