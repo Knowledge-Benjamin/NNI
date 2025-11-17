@@ -2,6 +2,7 @@ import React, { useEffect, useState, useRef, useMemo } from "react";
 import { useAuth } from "../context/AuthContext";
 // CmsEditor removed: About editor now uses structured section-based API only
 import CmsList from "../components/CmsList";
+import CmsEditor from "../components/CmsEditor";
 import * as api from "../utils/api";
 import Toasts from "../components/Toasts";
 import TagInput from "../components/TagInput";
