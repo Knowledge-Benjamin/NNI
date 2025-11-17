@@ -89,6 +89,69 @@ router.post("/register", async (req, res) => {
       },
     });
 
+    // Try to create a newsletter subscription in Beehiiv for this user.
+    // This is best-effort: do not fail the registration if the newsletter
+    // provider is unavailable. Use the Publication Subscriptions endpoint.
+    (async () => {
+      try {
+        const apiKey = process.env.BEEHIIV_KEY;
+        const publicationId = process.env.BEEHIIV_PUBLICATION_ID;
+        if (!apiKey || !publicationId) return;
+
+        const fetchFn =
+          typeof fetch === "function"
+            ? fetch
+            : (await import("node-fetch")).default;
+        const url = `https://api.beehiiv.com/v2/publications/${publicationId}/subscriptions`;
+
+        // Split name into first/last
+        let first_name = "";
+        let last_name = "";
+        if (user.name) {
+          const parts = user.name.trim().split(/\s+/);
+          first_name = parts.shift() || "";
+          last_name = parts.join(" ") || "";
+        }
+
+        const payload = {
+          email: user.email,
+          first_name: first_name || undefined,
+          last_name: last_name || undefined,
+          reactivate_existing: false,
+          send_welcome_email: false,
+        };
+        Object.keys(payload).forEach(
+          (k) => payload[k] === undefined && delete payload[k]
+        );
+
+        const resp = await fetchFn(url, {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${apiKey}`,
+            "Content-Type": "application/json",
+            Accept: "application/json",
+          },
+          body: JSON.stringify(payload),
+        });
+
+        if (!resp.ok) {
+          let data;
+          try {
+            data = await resp.json();
+          } catch (e) {
+            data = null;
+          }
+          console.warn(
+            "Beehiiv subscription failed for",
+            user.email,
+            data || resp.status
+          );
+        }
+      } catch (e) {
+        console.warn("Beehiiv subscription attempt error", e && e.message);
+      }
+    })();
+
     const token = signToken({
       id: user.id,
       email: user.email,
@@ -146,12 +209,10 @@ router.post("/login", loginLimiter, async (req, res) => {
 
     // If user exists and is locked, respond with locked status
     if (user && user.lockedUntil && new Date(user.lockedUntil) > now) {
-      return res
-        .status(423)
-        .json({
-          error:
-            "Account temporarily locked due to multiple failed login attempts. Try again later.",
-        });
+      return res.status(423).json({
+        error:
+          "Account temporarily locked due to multiple failed login attempts. Try again later.",
+      });
     }
 
     // Compare password (use dummy hash if user not found to mitigate timing attacks)

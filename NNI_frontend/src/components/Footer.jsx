@@ -32,34 +32,16 @@ export default function Footer() {
           </nav>
         </div>
 
-        <div className="footer-col footer-newsletter">
-          <h4>Stay informed</h4>
+        {/* Removed newsletter signup form for a cleaner footer UX on mobile */}
+        <div className="footer-col footer-contact">
+          <h4>Contact</h4>
           <p className="muted">
-            Subscribe to our newsletter for curated stories.
+            Have a question or story idea? We'd love to hear from you.
           </p>
-          <form
-            className="newsletter-form"
-            onSubmit={(e) => {
-              e.preventDefault();
-              const form = e.target;
-              const input = form.querySelector("input[name=email]");
-              // simple client-side feedback
-              if (input && input.value) {
-                alert(`Thanks — we'll send updates to ${input.value}`);
-                input.value = "";
-              }
-            }}
-          >
-            <input
-              name="email"
-              type="email"
-              placeholder="Your email address"
-              aria-label="Email for newsletter"
-            />
-            <button className="subscribe-button" type="submit">
-              Subscribe
-            </button>
-          </form>
+          <nav>
+            <Link to="/reach-out">Get in touch</Link>
+            <a href="mailto:hello@nni.example">hello@nni.example</a>
+          </nav>
         </div>
       </div>
 

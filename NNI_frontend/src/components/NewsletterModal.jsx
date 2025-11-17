@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
+import { useAuth } from "../context/AuthContext";
 
 // Simple sanitizers
 function sanitizeText(s) {
@@ -29,11 +30,24 @@ export default function NewsletterModal() {
   const okRef = useRef(null);
   const lastSubmitRef = useRef(0);
 
+  const auth = useAuth();
+
   useEffect(() => {
     function onOpen() {
       setExiting(false);
       setOpen(true);
       setStatus("idle");
+      // Prefill fields for authenticated users
+      try {
+        const a = auth;
+        if (a && a.user) {
+          const name = a.user.name || "";
+          const parts = name.trim().split(/\s+/);
+          setFirstName(parts.shift() || "");
+          setLastName(parts.join(" ") || "");
+          setEmail(a.user.email || "");
+        }
+      } catch (e) {}
       // focus the first input after open
       setTimeout(() => {
         if (ref.current) {
@@ -156,39 +170,40 @@ export default function NewsletterModal() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
+              disabled={!!auth?.user}
             />
           </div>
 
-                  <div className="nn-actions">
-                    {status !== "success" ? (
-                      <>
-                        <button
-                          type="submit"
-                          className="subscribe-button"
-                          disabled={status === "loading"}
-                        >
-                          {status === "loading" ? "Submitting..." : "Subscribe"}
-                        </button>
-                        <button type="button" className="nn-cancel" onClick={close}>
-                          Cancel
-                        </button>
-                      </>
-                    ) : (
-                      <>
-                        <button
-                          type="button"
-                          className="subscribe-ok"
-                          onClick={close}
-                          ref={okRef}
-                        >
-                          OK
-                        </button>
-                        <button type="button" className="nn-cancel" onClick={close}>
-                          Close
-                        </button>
-                      </>
-                    )}
-                  </div>
+          <div className="nn-actions">
+            {status !== "success" ? (
+              <>
+                <button
+                  type="submit"
+                  className="subscribe-button"
+                  disabled={status === "loading"}
+                >
+                  {status === "loading" ? "Submitting..." : "Subscribe"}
+                </button>
+                <button type="button" className="nn-cancel" onClick={close}>
+                  Cancel
+                </button>
+              </>
+            ) : (
+              <>
+                <button
+                  type="button"
+                  className="subscribe-ok"
+                  onClick={close}
+                  ref={okRef}
+                >
+                  OK
+                </button>
+                <button type="button" className="nn-cancel" onClick={close}>
+                  Close
+                </button>
+              </>
+            )}
+          </div>
 
           <div className="nn-message" aria-live="polite">
             {errorMessage && <div className="nn-error">{errorMessage}</div>}

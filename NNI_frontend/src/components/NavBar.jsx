@@ -162,16 +162,20 @@ export default function NavBar({ theme, toggleTheme }) {
           >
             About Us
           </NavLink>
-          <button
-            className="subscribe-button"
-            onClick={() => {
-              // open newsletter modal globally
-              window.dispatchEvent(new Event("open-newsletter"));
-              handleNavClick();
-            }}
-          >
-            Subscribe
-          </button>
+          {/* Show Subscribe CTA only for unauthenticated users. If the user is
+              signed in, show their name in-place of the CTA. */}
+          {!auth?.isAuthenticated && (
+            <button
+              className="subscribe-button"
+              onClick={() => {
+                // open newsletter modal globally
+                window.dispatchEvent(new Event("open-newsletter"));
+                handleNavClick();
+              }}
+            >
+              Subscribe
+            </button>
+          )}
           {auth?.user?.role === "ADMIN" && (
             <NavLink
               to="/dashboard"

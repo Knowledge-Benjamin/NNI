@@ -1,7 +1,11 @@
 const express = require("express");
 const rateLimit = require("express-rate-limit");
+const { PrismaClient } = require("@prisma/client");
+const bcrypt = require("bcryptjs");
+const crypto = require("crypto");
 
 const router = express.Router();
+const prisma = new PrismaClient();
 
 // stricter rate limit for newsletter signups to avoid abuse
 const newsletterLimiter = rateLimit({
@@ -54,9 +58,9 @@ router.post("/", newsletterLimiter, async (req, res) => {
         .json({ error: "Newsletter service not configured." });
     }
 
-  // Use the documented v2 Create Subscription endpoint for a publication
-  // Endpoint: POST https://api.beehiiv.com/v2/publications/:publicationId/subscriptions
-  const url = `https://api.beehiiv.com/v2/publications/${publicationId}/subscriptions`;
+    // Use the documented v2 Create Subscription endpoint for a publication
+    // Endpoint: POST https://api.beehiiv.com/v2/publications/:publicationId/subscriptions
+    const url = `https://api.beehiiv.com/v2/publications/${publicationId}/subscriptions`;
 
     // Use global fetch (Node 18+) or fallback to require('node-fetch') if available
     const fetchFn =
@@ -78,7 +82,6 @@ router.post("/", newsletterLimiter, async (req, res) => {
     // Remove undefined values to keep payload small
     Object.keys(body).forEach((k) => body[k] === undefined && delete body[k]);
 
-
     let resp;
     try {
       resp = await fetchFn(url, {
@@ -96,6 +99,47 @@ router.post("/", newsletterLimiter, async (req, res) => {
           { err: networkErr },
           "Network error when calling Beehiiv"
         );
+      // Try to persist subscriber in DB even if Beehiiv is unreachable
+      (async () => {
+        try {
+          const fullName = `${fn} ${ln}`.trim();
+          const existing = await prisma.user.findUnique({
+            where: { email: em },
+          });
+          if (!existing) {
+            const rounds =
+              parseInt(process.env.BCRYPT_ROUNDS || "12", 10) || 12;
+            const randomPw = crypto.randomBytes(16).toString("hex");
+            const hashed = await bcrypt.hash(
+              randomPw,
+              await bcrypt.genSalt(rounds)
+            );
+            await prisma.user.create({
+              data: {
+                email: em,
+                name: fullName || undefined,
+                password: hashed,
+                role: "SUBSCRIBER",
+              },
+            });
+          } else {
+            // update name if missing
+            if (!existing.name && fullName) {
+              await prisma.user.update({
+                where: { id: existing.id },
+                data: { name: fullName },
+              });
+            }
+          }
+        } catch (dberr) {
+          req.log &&
+            req.log.warn(
+              { err: dberr },
+              "Failed to persist subscriber locally"
+            );
+        }
+      })();
+
       return res
         .status(502)
         .json({ error: "Failed to contact newsletter provider" });
@@ -115,7 +159,6 @@ router.post("/", newsletterLimiter, async (req, res) => {
       data = null;
     }
 
-
     if (!resp.ok) {
       // log full response for debugging
       req.log &&
@@ -132,8 +175,85 @@ router.post("/", newsletterLimiter, async (req, res) => {
         process.env.NODE_ENV === "production"
           ? "Failed to subscribe"
           : `Beehiiv error (status ${resp.status}): ${String(beeMsg)}`;
+      // Even if Beehiiv returned an error, try to persist the subscriber locally
+      (async () => {
+        try {
+          const fullName = `${fn} ${ln}`.trim();
+          const existing = await prisma.user.findUnique({
+            where: { email: em },
+          });
+          if (!existing) {
+            const rounds =
+              parseInt(process.env.BCRYPT_ROUNDS || "12", 10) || 12;
+            const randomPw = crypto.randomBytes(16).toString("hex");
+            const hashed = await bcrypt.hash(
+              randomPw,
+              await bcrypt.genSalt(rounds)
+            );
+            await prisma.user.create({
+              data: {
+                email: em,
+                name: fullName || undefined,
+                password: hashed,
+                role: "SUBSCRIBER",
+              },
+            });
+          } else {
+            if (!existing.name && fullName) {
+              await prisma.user.update({
+                where: { id: existing.id },
+                data: { name: fullName },
+              });
+            }
+          }
+        } catch (dberr) {
+          req.log &&
+            req.log.warn(
+              { err: dberr },
+              "Failed to persist subscriber locally"
+            );
+        }
+      })();
+
       return res.status(502).json({ error: clientMsg });
     }
+
+    // Beehiiv succeeded - ensure we have the subscriber in our DB as well (best-effort)
+    (async () => {
+      try {
+        const fullName = `${fn} ${ln}`.trim();
+        const existing = await prisma.user.findUnique({ where: { email: em } });
+        if (!existing) {
+          const rounds = parseInt(process.env.BCRYPT_ROUNDS || "12", 10) || 12;
+          const randomPw = crypto.randomBytes(16).toString("hex");
+          const hashed = await bcrypt.hash(
+            randomPw,
+            await bcrypt.genSalt(rounds)
+          );
+          await prisma.user.create({
+            data: {
+              email: em,
+              name: fullName || undefined,
+              password: hashed,
+              role: "SUBSCRIBER",
+            },
+          });
+        } else {
+          if (!existing.name && fullName) {
+            await prisma.user.update({
+              where: { id: existing.id },
+              data: { name: fullName },
+            });
+          }
+        }
+      } catch (dberr) {
+        req.log &&
+          req.log.warn(
+            { err: dberr },
+            "Failed to persist subscriber locally after Beehiiv success"
+          );
+      }
+    })();
 
     return res.status(201).json({ success: true });
   } catch (err) {
