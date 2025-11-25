@@ -1,21 +1,3 @@
-import React, { useEffect, useState } from "react";
-import { Routes, Route, Link, useLocation } from "react-router-dom";
-// We intentionally avoid react-helmet packages to prevent peer-dependency issues
-// with React 19. Instead we programmatically set the canonical link in a
-// useEffect below.
-// import { AuthProvider } from "./context/AuthContext";
-import Home from "./pages/Home";
-import Login from "./pages/Login";
-import ArticleView from "./pages/ArticleView";
-import CMS from "./pages/CMS";
-import Dashboard from "./pages/Dashboard";
-import About from "./pages/About";
-import NavBar from "./components/NavBar";
-import Footer from "./components/Footer";
-import ProtectedRoute from "./components/ProtectedRoute";
-import NewsletterModal from "./components/NewsletterModal";
-// import Login from "./pages/Login";
-// import Admin from "./pages/Admin";
 // import ProtectedRoute from "./components/ProtectedRoute";
 import "./App.css";
 

@@ -1,19 +1,9 @@
 const express = require("express");
-const { PrismaClient } = require("@prisma/client");
+const prisma = require("../utils/prisma");
 const { verifyToken } = require("../middleware/auth");
 
 const router = express.Router();
 
-let prisma = null;
-try {
-  if (process.env.DATABASE_URL) prisma = new PrismaClient();
-} catch (e) {
-  console.warn(
-    "Prisma client init failed in /api/about route:",
-    e && e.message
-  );
-  prisma = null;
-}
 
 const ABOUT_SLUG = "about-nni";
 

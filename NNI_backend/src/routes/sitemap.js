@@ -1,7 +1,7 @@
 const express = require("express");
 const router = express.Router();
-const { PrismaClient } = require("@prisma/client");
-const prisma = new PrismaClient();
+const prisma = require("../utils/prisma");
+
 
 // Generate dynamic sitemap.xml
 router.get("/sitemap.xml", async (req, res) => {

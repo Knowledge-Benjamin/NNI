@@ -1,11 +1,11 @@
 const express = require("express");
 const bcrypt = require("bcryptjs");
-const { PrismaClient } = require("@prisma/client");
+const prisma = require("../utils/prisma");
 const { signToken, verifyToken } = require("../middleware/auth");
 const rateLimit = require("express-rate-limit");
 
-const prisma = new PrismaClient();
 const router = express.Router();
+
 
 // Rate limiter for login attempts (per IP)
 const loginLimiter = rateLimit({

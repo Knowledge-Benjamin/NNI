@@ -37,6 +37,8 @@ if (!fs.existsSync(keyPath)) {
     );
     process.exit(1);
   }
+} else {
+  console.log("Google Cloud service account key already exists at: " + keyPath);
 }
 // === END DECODE ===
 // Validate required environment
@@ -67,10 +69,6 @@ const logger = pino({
 
 // Initialize Express app
 const app = express();
-
-// Initialize Express app
-
-// Initialize app middleware
 
 // CORS configuration
 app.use(

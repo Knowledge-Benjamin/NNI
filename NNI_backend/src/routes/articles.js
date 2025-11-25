@@ -1,26 +1,14 @@
 const express = require("express");
 const path = require("path");
-const { PrismaClient } = require("@prisma/client");
+const prisma = require("../utils/prisma");
 const { verifyToken } = require("../middleware/auth");
 const { upload, handleGcsUpload } = require("../utils/upload");
 const { deleteFromGCS } = require("../utils/gcs");
+const { extractFeaturedImage } = require("../utils/extractImage");
 
 const router = express.Router();
 
 // Initialize Prisma client if DATABASE_URL is configured
-let prisma = null;
-try {
-  if (process.env.DATABASE_URL) {
-    prisma = new PrismaClient();
-  } else {
-    console.warn(
-      "DATABASE_URL not set - running without database (read-only stub responses)"
-    );
-  }
-} catch (err) {
-  console.error("Failed to initialize Prisma client:", err);
-  prisma = null;
-}
 
 // Development stub data (used only when DATABASE_URL is not provided)
 const DEV_SAMPLE_ARTICLES = [
@@ -503,45 +491,15 @@ router.post(
       let featuredImageUrl = req.file
         ? req.file.location
         : req.body && req.body.featuredImage
-        ? req.body.featuredImage
-        : null;
+          ? req.body.featuredImage
+          : null;
 
-      // If no explicit featuredImage provided, try to infer from first
-      // <img src="..."> in the HTML content. This handles cases where the
-      // editor inserted an inline image (e.g., ImgBB URL) but the client
-      // didn't send featuredImage as a separate field.
+      // If no explicit featuredImage provided, try to infer from first <img> in content
       if (!featuredImageUrl && content) {
-        try {
-          const m = String(content).match(
-            /<img[^>]+src=["']?([^"'>\s]+)["']?/i
-          );
-          if (m && m[1]) {
-            featuredImageUrl = m[1];
-          }
-        } catch (e) {
-          // ignore regex errors
-        }
+        featuredImageUrl = extractFeaturedImage(content);
       }
 
-      // TEMP DEBUG: use request logger (pino) where available so logs appear
-      try {
-        if (req && req.log && typeof req.log.info === "function") {
-          req.log.info(
-            { headers: req.headers },
-            "POST /api/articles - headers"
-          );
-          req.log.info({ body: req.body }, "POST /api/articles - body");
-          req.log.info({ file: req.file }, "POST /api/articles - file");
-          req.log.info({ featuredImageUrl }, "Computed featuredImageUrl");
-        } else {
-          console.log("POST /api/articles - headers:", req.headers);
-          console.log("POST /api/articles - body:", req.body);
-          console.log("POST /api/articles - file:", req.file);
-          console.log("Computed featuredImageUrl:", featuredImageUrl);
-        }
-      } catch (logErr) {
-        console.error("Error while logging debug info:", logErr);
-      }
+
 
       // build create payload; declare outside so catch/retry handlers can
       // access and mutate it in case of slug conflicts
@@ -574,16 +532,9 @@ router.post(
         ...(status === "PUBLISHED" ? { publishedAt: new Date() } : {}),
       };
 
-      // TEMP DEBUG: log the exact object passed to Prisma
-      console.log("Prisma create data:", createData);
 
       const article = await prisma.article.create({ data: createData });
 
-      // TEMP DEBUG: confirm what was passed to prisma (sanitized) by re-logging
-      console.log(
-        "Article created with featuredImage stored as:",
-        article.featuredImage
-      );
 
       res.status(201).json(article);
     } catch (error) {
@@ -758,13 +709,9 @@ router.put(
 
       // If still no featuredImage, try to infer from the content's first <img>
       if (!updates.featuredImage && updates.content) {
-        try {
-          const mm = String(updates.content).match(
-            /<img[^>]+src=["']?([^"'>\s]+)["']?/i
-          );
-          if (mm && mm[1]) updates.featuredImage = mm[1];
-        } catch (e) {}
+        updates.featuredImage = extractFeaturedImage(updates.content);
       }
+
 
       const article = await prisma.article.update({
         where: { id: req.params.id },
