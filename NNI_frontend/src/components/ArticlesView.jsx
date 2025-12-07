@@ -186,8 +186,8 @@ const ArticleCard = ({ article, featured }) => (
           {article.publishedAt
             ? new Date(article.publishedAt).toLocaleDateString()
             : article.createdAt
-            ? new Date(article.createdAt).toLocaleDateString()
-            : "Recent"}
+              ? new Date(article.createdAt).toLocaleDateString()
+              : "Recent"}
         </span>
       </div>
       <h2 className="article-title">

@@ -1,4 +1,15 @@
-// import ProtectedRoute from "./components/ProtectedRoute";
+import React, { useEffect, useState } from "react";
+import { Routes, Route, useLocation } from "react-router-dom";
+import Home from "./pages/Home";
+import Login from "./pages/Login";
+import ArticleView from "./pages/ArticleView";
+import CMS from "./pages/CMS";
+import Dashboard from "./pages/Dashboard";
+import About from "./pages/About";
+import NavBar from "./components/NavBar";
+import Footer from "./components/Footer";
+import ProtectedRoute from "./components/ProtectedRoute";
+import NewsletterModal from "./components/NewsletterModal";
 import "./App.css";
 
 export default function App() {
